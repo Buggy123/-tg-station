@@ -49,7 +49,7 @@
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	
 /obj/item/weapon/sord/handle_suicide() //Literally too shitty to kill yourself with
-	user.visible_message("<span class='suicide'>[user] tries to impale \himself with the [src.name]... and isn't even cut! Wow, that's a shitty sword...</span>")
+	src.visible_message("<span class='suicide'>[src] tries to impale \himself with the SORD... and isn't even cut! Wow, that's a shitty sword...</span>")
 	return
 	
 /obj/item/weapon/claymore
