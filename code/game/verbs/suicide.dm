@@ -8,8 +8,12 @@
 	if(!canSuicide())
 		return
 	if(confirm == "Yes")
-		suiciding = 1
 		var/obj/item/held_item = get_active_hand()
+		if(istype(held_item, /obj/item/weapon/sord)) //I should really expand this so other items can easily prevent suicide as well...
+			src.visible_message("<span class='suicide'>[src] tries to impale \himself with the SORD... and isn't even cut! Wow, that's a shitty sword...</span>")
+			src << "The SORD is too shitty to kill yourself with, try literally anything else!"
+			return //too shitty to even kill yourself with
+		suiciding = 1
 		if(held_item)
 			var/damagetype = held_item.suicide_act(src)
 			if(damagetype)
