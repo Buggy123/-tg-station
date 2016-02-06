@@ -48,10 +48,6 @@
 	hitsound = 'sound/weapons/bladeslice.ogg'
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	
-/obj/item/weapon/sord/handle_suicide() //Literally too shitty to kill yourself with
-	visible_message("<span class='suicide'>[src] tries to impale \himself with the SORD... and isn't even cut! Wow, that's a shitty sword...</span>")
-	return
-	
 /obj/item/weapon/claymore
 	name = "claymore"
 	desc = "What are you standing around staring at this for? Get to killing!"
