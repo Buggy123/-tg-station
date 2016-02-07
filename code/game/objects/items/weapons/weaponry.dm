@@ -49,7 +49,7 @@
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	
 /obj/item/weapon/sord/suicide_act(mob/user)
-	user.visible_message("<span class='suicide'>You try to impale yourself with the SORD... and isn't even cut! Wow, that's a shitty sword...</span>")
+	user.visible_message("<span class='suicide'>You try to impale yourself with the SORD... and it doesn't even leave a mark! Wow, that's a shitty sword...</span>")
 	return(0)
 	
 /obj/item/weapon/claymore
