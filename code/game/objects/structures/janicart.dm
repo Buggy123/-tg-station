@@ -5,7 +5,7 @@
 	icon_state = "cart"
 	anchored = 0
 	density = 1
-	flags = OPENCONTAINER
+	container_type = OPENCONTAINER
 	//copypaste sorry
 	var/amount_per_transfer_from_this = 5 //shit I dunno, adding this so syringes stop runtime erroring. --NeoFite
 	var/obj/item/weapon/storage/bag/trash/mybag	= null
@@ -18,6 +18,7 @@
 
 /obj/structure/janitorialcart/New()
 	create_reagents(100)
+	..()
 
 
 /obj/structure/janitorialcart/proc/wet_mop(obj/item/weapon/mop, mob/user)
@@ -82,10 +83,12 @@
 		mybag.attackby(I, user)
 	else if(istype(I, /obj/item/weapon/crowbar))
 		user.visible_message("[user] begins to empty the contents of [src].", "<span class='notice'>You begin to empty the contents of [src]...</span>")
-		if(do_after(user, 30/I.toolspeed, target = src))
+		if(do_after(user, 30*I.toolspeed, target = src))
 			usr << "<span class='notice'>You empty the contents of [src]'s bucket onto the floor.</span>"
 			reagents.reaction(src.loc)
 			src.reagents.clear_reagents()
+	else
+		return ..()
 
 /obj/structure/janitorialcart/attack_hand(mob/user)
 	user.set_machine(src)
@@ -147,15 +150,15 @@
 
 
 /obj/structure/janitorialcart/update_icon()
-	overlays.Cut()
+	cut_overlays()
 	if(mybag)
-		overlays += "cart_garbage"
+		add_overlay("cart_garbage")
 	if(mymop)
-		overlays += "cart_mop"
+		add_overlay("cart_mop")
 	if(myspray)
-		overlays += "cart_spray"
+		add_overlay("cart_spray")
 	if(myreplacer)
-		overlays += "cart_replacer"
+		add_overlay("cart_replacer")
 	if(signs)
-		overlays += "cart_sign[signs]"
+		add_overlay("cart_sign[signs]")
 

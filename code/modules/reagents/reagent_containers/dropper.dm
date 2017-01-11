@@ -6,6 +6,7 @@
 	amount_per_transfer_from_this = 5
 	possible_transfer_amounts = list(1, 2, 3, 4, 5)
 	volume = 5
+	container_type = TRANSPARENT
 
 /obj/item/weapon/reagent_containers/dropper/afterattack(obj/target, mob/user , proximity)
 	if(!proximity) return
@@ -24,7 +25,7 @@
 		var/fraction = min(amount_per_transfer_from_this/reagents.total_volume, 1)
 
 		if(ismob(target))
-			if(istype(target , /mob/living/carbon/human))
+			if(ishuman(target))
 				var/mob/living/carbon/human/victim = target
 
 				var/obj/item/safe_thing = null
@@ -51,6 +52,9 @@
 					user << "<span class='notice'>You transfer [trans] unit\s of the solution.</span>"
 					update_icon()
 					return
+			else if(isalien(target)) //hiss-hiss has no eyes!
+				target << "<span class='danger'>[target] does not seem to have any eyes!</span>"
+				return
 
 			target.visible_message("<span class='danger'>[user] squirts something into [target]'s eyes!</span>", \
 									"<span class='userdanger'>[user] squirts something into [target]'s eyes!</span>")
@@ -85,8 +89,8 @@
 		update_icon()
 
 /obj/item/weapon/reagent_containers/dropper/update_icon()
-	overlays.Cut()
+	cut_overlays()
 	if(reagents.total_volume)
 		var/image/filling = image('icons/obj/reagentfillings.dmi', src, "dropper")
 		filling.color = mix_color_from_reagents(reagents.reagent_list)
-		overlays += filling
+		add_overlay(filling)

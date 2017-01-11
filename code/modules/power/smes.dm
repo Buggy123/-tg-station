@@ -41,15 +41,16 @@
 	var/static/list/smesImageCache
 
 
+/obj/machinery/power/smes/examine(user)
+	..()
+	if(!terminal)
+		user << "<span class='warning'>This SMES has no power terminal!</span>"
+
 /obj/machinery/power/smes/New()
 	..()
-	component_parts = list()
-	component_parts += new /obj/item/weapon/circuitboard/smes(null)
-	for(var/i in 1 to 5)
-		component_parts += new /obj/item/weapon/stock_parts/cell/high/empty(null)
-	component_parts += new /obj/item/stack/cable_coil(null, 5)
-	component_parts += new /obj/item/weapon/stock_parts/capacitor(null)
-	RefreshParts()
+	var/obj/item/weapon/circuitboard/machine/B = new /obj/item/weapon/circuitboard/machine/smes(null)
+	B.apply_default_parts(src)
+
 	spawn(5)
 		dir_loop:
 			for(var/d in cardinal)
@@ -65,6 +66,16 @@
 		terminal.master = src
 		update_icon()
 	return
+
+/obj/item/weapon/circuitboard/machine/smes
+	name = "SMES (Machine Board)"
+	build_path = /obj/machinery/power/smes
+	origin_tech = "programming=3;powerstorage=3;engineering=3"
+	req_components = list(
+							/obj/item/stack/cable_coil = 5,
+							/obj/item/weapon/stock_parts/cell = 5,
+							/obj/item/weapon/stock_parts/capacitor = 1)
+	def_components = list(/obj/item/weapon/stock_parts/cell = /obj/item/weapon/stock_parts/cell/high/empty)
 
 /obj/machinery/power/smes/RefreshParts()
 	var/IO = 0
@@ -98,7 +109,7 @@
 				user << "<span class='notice'>Terminal found.</span>"
 				break
 		if(!terminal)
-			user << "<span class='alert'>No power source found.</span>"
+			user << "<span class='alert'>No power terminal found.</span>"
 			return
 		stat &= ~BROKEN
 		update_icon()
@@ -115,7 +126,7 @@
 			return
 
 		if(terminal) //is there already a terminal ?
-			user << "<span class='warning'>This SMES already have a power terminal!</span>"
+			user << "<span class='warning'>This SMES already has a power terminal!</span>"
 			return
 
 		if(!panel_open) //is the panel open ?
@@ -129,16 +140,18 @@
 
 
 		var/obj/item/stack/cable_coil/C = I
-		if(C.amount < 10)
+		if(C.get_amount() < 10)
 			user << "<span class='warning'>You need more wires!</span>"
 			return
 
 		user << "<span class='notice'>You start building the power terminal...</span>"
 		playsound(src.loc, 'sound/items/Deconstruct.ogg', 50, 1)
 
-		if(do_after(user, 20, target = src) && C.amount >= 10)
+		if(do_after(user, 20, target = src) && C.get_amount() >= 10)
+			if(C.get_amount() < 10 || !C)
+				return
 			var/obj/structure/cable/N = T.get_cable_node() //get the connecting node cable, if there's one
-			if (prob(50) && electrocute_mob(usr, N, N)) //animate the electrocution if uncautious and unlucky
+			if (prob(50) && electrocute_mob(usr, N, N, 1, TRUE)) //animate the electrocution if uncautious and unlucky
 				var/datum/effect_system/spark_spread/s = new /datum/effect_system/spark_spread
 				s.set_up(5, 1, src)
 				s.start()
@@ -156,7 +169,8 @@
 
 	//disassembling the terminal
 	if(istype(I, /obj/item/weapon/wirecutters) && terminal && panel_open)
-		terminal.dismantle(user)
+		terminal.dismantle(user, I)
+		return
 
 	//crowbarring it !
 	var/turf/T = get_turf(src)
@@ -164,8 +178,20 @@
 		message_admins("[src] has been deconstructed by [key_name_admin(user)](<A HREF='?_src_=holder;adminmoreinfo=\ref[user]'>?</A>) (<A HREF='?_src_=holder;adminplayerobservefollow=\ref[user]'>FLW</A>) in ([T.x],[T.y],[T.z] - <A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>JMP</a>)",0,1)
 		log_game("[src] has been deconstructed by [key_name(user)]")
 		investigate_log("SMES deconstructed by [key_name(user)]","singulo")
+		return
+	else if(panel_open && istype(I, /obj/item/weapon/crowbar))
+		return
 
-/obj/machinery/power/smes/deconstruction()
+	return ..()
+
+/obj/machinery/power/smes/default_deconstruction_crowbar(obj/item/weapon/crowbar/C)
+	if(istype(C) && terminal)
+		usr << "<span class='warning'>You must first remove the power terminal!</span>"
+		return FALSE
+
+	return ..()
+
+/obj/machinery/power/smes/on_deconstruction()
 	for(var/obj/item/weapon/stock_parts/cell/cell in component_parts)
 		cell.charge = (charge / capacity) * cell.maxcharge
 
@@ -183,17 +209,19 @@
 // wires will attach to this
 /obj/machinery/power/smes/proc/make_terminal(turf/T)
 	terminal = new/obj/machinery/power/terminal(T)
-	terminal.dir = get_dir(T,src)
+	terminal.setDir(get_dir(T,src))
 	terminal.master = src
+	stat &= ~BROKEN
 
 /obj/machinery/power/smes/disconnect_terminal()
 	if(terminal)
 		terminal.master = null
 		terminal = null
+		stat |= BROKEN
 
 
 /obj/machinery/power/smes/update_icon()
-	overlays.Cut()
+	cut_overlays()
 	if(stat & BROKEN)
 		return
 
@@ -216,19 +244,19 @@
 		smesImageCache[SMES_INPUT_ATTEMPT] = image('icons/obj/power.dmi', "smes-oc0")
 
 	if(outputting)
-		overlays += smesImageCache[SMES_OUTPUTTING]
+		add_overlay(smesImageCache[SMES_OUTPUTTING])
 	else
-		overlays += smesImageCache[SMES_NOT_OUTPUTTING]
+		add_overlay(smesImageCache[SMES_NOT_OUTPUTTING])
 
 	if(inputting)
-		overlays += smesImageCache[SMES_INPUTTING]
+		add_overlay(smesImageCache[SMES_INPUTTING])
 	else
 		if(input_attempt)
-			overlays += smesImageCache[SMES_INPUT_ATTEMPT]
+			add_overlay(smesImageCache[SMES_INPUT_ATTEMPT])
 
 	var/clevel = chargedisplay()
 	if(clevel>0)
-		overlays += smesImageCache[clevel]
+		add_overlay(smesImageCache[clevel])
 	return
 
 
@@ -236,7 +264,6 @@
 	return round(5.5*charge/capacity)
 
 /obj/machinery/power/smes/process()
-
 	if(stat & BROKEN)
 		return
 
