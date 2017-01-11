@@ -6,7 +6,6 @@ Research Director
 	flag = RD
 	department_head = list("Captain")
 	department_flag = MEDSCI
-	head_announce = list("Science")
 	faction = "Station"
 	total_positions = 1
 	spawn_positions = 1
@@ -21,16 +20,15 @@ Research Director
 			            access_tox_storage, access_teleporter, access_sec_doors,
 			            access_research, access_robotics, access_xenobiology, access_ai_upload,
 			            access_RC_announce, access_keycard_auth, access_gateway, access_mineral_storeroom,
-			            access_tech_storage, access_minisat, access_maint_tunnels, access_network)
+			            access_tech_storage, access_minisat)
 	minimal_access = list(access_rd, access_heads, access_tox, access_genetics, access_morgue,
 			            access_tox_storage, access_teleporter, access_sec_doors,
 			            access_research, access_robotics, access_xenobiology, access_ai_upload,
 			            access_RC_announce, access_keycard_auth, access_gateway, access_mineral_storeroom,
-			            access_tech_storage, access_minisat, access_maint_tunnels, access_network)
+			            access_tech_storage, access_minisat)
 
 /datum/outfit/job/rd
 	name = "Research Director"
-	jobtype = /datum/job/rd
 
 	id = /obj/item/weapon/card/id/silver
 	belt = /obj/item/device/pda/heads/rd
@@ -40,19 +38,18 @@ Research Director
 	suit = /obj/item/clothing/suit/toggle/labcoat
 	l_hand = /obj/item/weapon/clipboard
 	l_pocket = /obj/item/device/laser_pointer
-	backpack_contents = list(/obj/item/weapon/melee/classic_baton/telescopic=1,/obj/item/device/modular_computer/tablet/preset/advanced=1)
+	backpack_contents = list(/obj/item/weapon/melee/classic_baton/telescopic=1)
 
 	backpack = /obj/item/weapon/storage/backpack/science
-	satchel = /obj/item/weapon/storage/backpack/satchel/tox
+	satchel = /obj/item/weapon/storage/backpack/satchel_tox
 
-/datum/outfit/job/rd/rig
-	name = "Research Director (Hardsuit)"
+/datum/outfit/job/rd/post_equip(mob/living/carbon/human/H, visualsOnly = FALSE)
+	..()
 
-	l_hand = null
-	mask = /obj/item/clothing/mask/breath
-	suit = /obj/item/clothing/suit/space/hardsuit/rd
-	suit_store = /obj/item/weapon/tank/internals/oxygen
-	internals_slot = slot_s_store
+	if(visualsOnly)
+		return
+
+	announce_head(H, list("Science")) //tell underlings (science radio) they have a head
 
 /*
 Scientist
@@ -75,7 +72,6 @@ Scientist
 
 /datum/outfit/job/scientist
 	name = "Scientist"
-	jobtype = /datum/job/scientist
 
 	belt = /obj/item/device/pda/toxins
 	ears = /obj/item/device/radio/headset/headset_sci
@@ -84,7 +80,7 @@ Scientist
 	suit = /obj/item/clothing/suit/toggle/labcoat/science
 
 	backpack = /obj/item/weapon/storage/backpack/science
-	satchel = /obj/item/weapon/storage/backpack/satchel/tox
+	satchel = /obj/item/weapon/storage/backpack/satchel_tox
 
 /*
 Roboticist
@@ -107,7 +103,6 @@ Roboticist
 
 /datum/outfit/job/roboticist
 	name = "Roboticist"
-	jobtype = /datum/job/roboticist
 
 	belt = /obj/item/weapon/storage/belt/utility/full
 	l_pocket = /obj/item/device/pda/roboticist
@@ -116,6 +111,6 @@ Roboticist
 	suit = /obj/item/clothing/suit/toggle/labcoat
 
 	backpack = /obj/item/weapon/storage/backpack/science
-	satchel = /obj/item/weapon/storage/backpack/satchel/tox
+	satchel = /obj/item/weapon/storage/backpack/satchel_tox
 
 	pda_slot = slot_l_store

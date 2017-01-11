@@ -29,7 +29,7 @@
 	for(var/obj/effect/landmark/R in landmarks_list)
 		if(R.name != "blobspawn")
 			if(prob(35))
-				if(isspaceturf(R.loc))
+				if(istype(R.loc,/turf/space))
 					new /mob/living/simple_animal/chicken/rabbit/space(R.loc)
 				else
 					new /mob/living/simple_animal/chicken/rabbit(R.loc)
@@ -38,9 +38,9 @@
 	name = "\improper rabbit"
 	desc = "The hippiest hop around."
 	icon = 'icons/mob/Easter.dmi'
-	icon_state = "rabbit_white"
-	icon_living = "rabbit_white"
-	icon_dead = "rabbit_white_dead"
+	icon_state = "rabbit"
+	icon_living = "rabbit"
+	icon_dead = "rabbit_dead"
 	speak = list("Hop into Easter!","Come get your eggs!","Prizes for everyone!")
 	speak_emote = list("sniffles","twitches")
 	emote_hear = list("hops.")
@@ -56,13 +56,13 @@
 
 /mob/living/simple_animal/chicken/rabbit/space
 	icon_prefix = "s_rabbit"
-	icon_state = "s_rabbit_white"
-	icon_living = "s_rabbit_white"
-	icon_dead = "s_rabbit_white_dead"
+	icon_state = "s_rabbit"
+	icon_living = "s_rabbit"
+	icon_dead = "s_rabbit_dead"
 	atmos_requirements = list("min_oxy" = 0, "max_oxy" = 0, "min_tox" = 0, "max_tox" = 0, "min_co2" = 0, "max_co2" = 0, "min_n2" = 0, "max_n2" = 0)
 	minbodytemp = 0
 	maxbodytemp = 1500
-	unsuitable_atmos_damage = 0
+	unsuitable_atmos_damage = 0	//This damage is taken when atmos doesn't fit all the requirements above
 
 //Easter Baskets
 /obj/item/weapon/storage/bag/easterbasket
@@ -72,16 +72,16 @@
 	can_hold = list(/obj/item/weapon/reagent_containers/food/snacks/egg,/obj/item/weapon/reagent_containers/food/snacks/chocolateegg,/obj/item/weapon/reagent_containers/food/snacks/boiledegg)
 
 /obj/item/weapon/storage/bag/easterbasket/proc/countEggs()
-	cut_overlays()
-	add_overlay(image("icon" = icon, "icon_state" = "basket-grass", "layer" = -1))
-	add_overlay(image("icon" = icon, "icon_state" = "basket-egg[contents.len <= 5 ? contents.len : 5]", "layer" = -1))
+	overlays.Cut()
+	overlays += image("icon" = icon, "icon_state" = "basket-grass", "layer" = -1)
+	overlays += image("icon" = icon, "icon_state" = "basket-egg[contents.len <= 5 ? contents.len : 5]", "layer" = -1)
 
 /obj/item/weapon/storage/bag/easterbasket/remove_from_storage(obj/item/W as obj, atom/new_location)
 	..()
 	countEggs()
 
 /obj/item/weapon/storage/bag/easterbasket/handle_item_insertion(obj/item/I, prevent_warning = 0)
-	. = ..()
+	..()
 	countEggs()
 
 //Bunny Suit
@@ -111,9 +111,9 @@
 
 /obj/item/weapon/reagent_containers/food/snacks/egg/loaded/New()
 	..()
-	var/eggcolor = pick("blue","green","mime","orange","purple","rainbow","red","yellow")
-	icon_state = "egg-[eggcolor]"
-	item_color = "[eggcolor]"
+	var/color = pick("blue","green","mime","orange","purple","rainbow","red","yellow")
+	icon_state = "egg-[color]"
+	item_color = "[color]"
 
 /obj/item/weapon/reagent_containers/food/snacks/egg/proc/dispensePrize(turf/where)
 	var/won = pick(/obj/item/clothing/head/bunnyhead,
@@ -151,14 +151,14 @@
 	desc = "The Cross represents the Assistants that died for your sins."
 	icon_state = "hotcrossbun"
 
-/datum/crafting_recipe/food/food/hotcrossbun
+/datum/table_recipe/hotcrossbun
 	name = "Hot-Cross Bun"
 	reqs = list(
 		/obj/item/weapon/reagent_containers/food/snacks/store/bread/plain = 1,
 		/datum/reagent/consumable/sugar = 1
 	)
 	result = /obj/item/weapon/reagent_containers/food/snacks/hotcrossbun
-	category = CAT_MISCFOOD
+	category = CAT_FOOD
 
 
 /obj/item/weapon/reagent_containers/food/snacks/store/cake/brioche
@@ -175,14 +175,14 @@
 	icon_state = "briochecake_slice"
 	filling_color = "#FFD700"
 
-/datum/crafting_recipe/food/food/briochecake
+/datum/table_recipe/briochecake
 	name = "Brioche cake"
 	reqs = list(
 		/obj/item/weapon/reagent_containers/food/snacks/store/cake/plain = 1,
 		/datum/reagent/consumable/sugar = 2
 	)
 	result = /obj/item/weapon/reagent_containers/food/snacks/store/cake/brioche
-	category = CAT_MISCFOOD
+	category = CAT_FOOD
 
 /obj/item/weapon/reagent_containers/food/snacks/scotchegg
 	name = "scotch egg"
@@ -193,7 +193,7 @@
 	filling_color = "#FFFFF0"
 	list_reagents = list("nutriment" = 6)
 
-/datum/crafting_recipe/food/scotchegg
+/datum/table_recipe/scotchegg
 	name = "Scotch egg"
 	reqs = list(
 		/datum/reagent/consumable/sodiumchloride = 1,
@@ -202,24 +202,24 @@
 		/obj/item/weapon/reagent_containers/food/snacks/faggot = 1
 	)
 	result = /obj/item/weapon/reagent_containers/food/snacks/scotchegg
-	category = CAT_MISCFOOD
+	category = CAT_FOOD
 
 /obj/item/weapon/reagent_containers/food/snacks/soup/mammi
-	name = "Mammi"
+	name = "Mämmi"
 	desc = "A bowl of mushy bread and milk. It reminds you, not too fondly, of a bowel movement."
 	icon_state = "mammi"
 	bonus_reagents = list("nutriment" = 3, "vitamin" = 1)
 	list_reagents = list("nutriment" = 8, "vitamin" = 1)
 
-/datum/crafting_recipe/food/mammi
-	name = "Mammi"
+/datum/table_recipe/mammi
+	name = "Mämmi"
 	reqs = list(
 		/obj/item/weapon/reagent_containers/food/snacks/store/bread/plain = 1,
 		/obj/item/weapon/reagent_containers/food/snacks/chocolatebar = 1,
 		/datum/reagent/consumable/milk = 5
 	)
 	result = /obj/item/weapon/reagent_containers/food/snacks/soup/mammi
-	category = CAT_MISCFOOD
+	category = CAT_FOOD
 
 /obj/item/weapon/reagent_containers/food/snacks/chocolatebunny
 	name = "chocolate bunny"
@@ -229,11 +229,11 @@
 	list_reagents = list("nutriment" = 4, "sugar" = 2, "cocoa" = 2)
 	filling_color = "#A0522D"
 
-/datum/crafting_recipe/food/chocolatebunny
+/datum/table_recipe/chocolatebunny
 	name = "Chocolate bunny"
 	reqs = list(
 		/datum/reagent/consumable/sugar = 2,
 		/obj/item/weapon/reagent_containers/food/snacks/chocolatebar = 1
 	)
 	result = /obj/item/weapon/reagent_containers/food/snacks/chocolatebunny
-	category = CAT_MISCFOOD
+	category = CAT_FOOD

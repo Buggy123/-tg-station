@@ -9,14 +9,12 @@ import pickle
 import socket
 import sys
 import threading
-import logging
 
-logging.basicConfig(level=logging.INFO)
 global irc
 
 
-def print_err(msg):
-	logging.error(msg)
+def print_err(*msg):
+	print(*msg, file=sys.stderr)
 
 
 def setup_irc_socket():
@@ -62,7 +60,7 @@ def nudge_handler():
 			rawdata = s.recv(1024)
 			s.close()
 			data = pickle.loads(rawdata)
-			logging.info(data)
+			print(data)
 			if data["ip"][0] == "#":
 				message = "{0} :AUTOMATIC ANNOUNCEMENT : {1}\r\n".format(data["ip"], str(" ".join(data["data"])))
 			else:
@@ -81,7 +79,7 @@ def irc_handler():
 		try:
 			buf = irc.recv(1024).decode("UTF-8").split("\n")
 			for i in buf:
-				logging.info(i)
+				print(i)
 				if i[0:4] == "PING":
 					irc.send(bytes("PONG {0}\r\n".format(i[5:]), "UTF-8"))
 				else:

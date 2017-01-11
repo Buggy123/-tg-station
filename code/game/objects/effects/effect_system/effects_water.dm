@@ -9,7 +9,8 @@
 
 /obj/effect/particle_effect/water/New()
 	..()
-	QDEL_IN(src, 70)
+	spawn( 70 )
+		qdel(src)
 
 /obj/effect/particle_effect/water/Move(turf/newloc)
 	if (--src.life < 1)
@@ -47,7 +48,8 @@ steam.start() -- spawns the effect
 
 /obj/effect/particle_effect/steam/New()
 	..()
-	QDEL_IN(src, 20)
+	spawn(20)
+		qdel(src)
 
 /datum/effect_system/steam_spread
 	effect_type = /obj/effect/particle_effect/steam

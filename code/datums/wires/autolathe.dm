@@ -1,6 +1,5 @@
 /datum/wires/autolathe
 	holder_type = /obj/machinery/autolathe
-	proper_name = "Autolathe"
 
 /datum/wires/autolathe/New(atom/holder)
 	wires = list(
@@ -27,13 +26,13 @@
 	switch(wire)
 		if(WIRE_HACK)
 			A.adjust_hacked(!A.hacked)
-			addtimer(CALLBACK(A, /obj/machinery/autolathe.proc/reset, wire), 60)
+			addtimer(A, "reset", 60, FALSE, wire)
 		if(WIRE_SHOCK)
 			A.shocked = !A.shocked
-			addtimer(CALLBACK(A, /obj/machinery/autolathe.proc/reset, wire), 60)
+			addtimer(A, "reset", 60, FALSE, wire)
 		if(WIRE_DISABLE)
 			A.disabled = !A.disabled
-			addtimer(CALLBACK(A, /obj/machinery/autolathe.proc/reset, wire), 60)
+			addtimer(A, "reset", 60, FALSE, wire)
 
 /datum/wires/autolathe/on_cut(wire, mend)
 	var/obj/machinery/autolathe/A = holder

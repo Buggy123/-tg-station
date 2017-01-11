@@ -8,7 +8,7 @@
 #define PRESET_MEDIUM 3000
 #define PRESET_LONG 6000
 
-
+//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Brig Door control displays.
@@ -23,7 +23,7 @@
 	icon = 'icons/obj/status_display.dmi'
 	icon_state = "frame"
 	desc = "A remote control for a door."
-	req_access = list(access_security)
+	req_access = list(access_brig)
 	anchored = 1
 	density = 0
 	var/id = null // id of linked machinery/lockers
@@ -92,7 +92,8 @@
 	for(var/obj/machinery/door/window/brigdoor/door in targets)
 		if(door.density)
 			continue
-		addtimer(CALLBACK(door, /obj/machinery/door/window/brigdoor.proc/close), 0)
+		spawn(0)
+			door.close()
 
 	for(var/obj/structure/closet/secure_closet/brig/C in targets)
 		if(C.broken)
@@ -121,7 +122,8 @@
 	for(var/obj/machinery/door/window/brigdoor/door in targets)
 		if(!door.density)
 			continue
-		addtimer(CALLBACK(door, /obj/machinery/door/window/brigdoor.proc/open), 0)
+		spawn(0)
+			door.open()
 
 	for(var/obj/structure/closet/secure_closet/brig/C in targets)
 		if(C.broken)
@@ -181,8 +183,8 @@
 /obj/machinery/door_timer/proc/set_picture(state)
 	if(maptext)
 		maptext = ""
-	cut_overlays()
-	add_overlay(image('icons/obj/status_display.dmi', icon_state=state))
+	overlays.Cut()
+	overlays += image('icons/obj/status_display.dmi', icon_state=state)
 
 
 //Checks to see if there's 1 line or 2, adds text-icons-numbers/letters over display

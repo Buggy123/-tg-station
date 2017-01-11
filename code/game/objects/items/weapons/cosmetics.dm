@@ -4,7 +4,7 @@
 	desc = "A generic brand of lipstick."
 	icon = 'icons/obj/items.dmi'
 	icon_state = "lipstick"
-	w_class = WEIGHT_CLASS_TINY
+	w_class = 1
 	var/colour = "red"
 	var/open = 0
 
@@ -27,21 +27,19 @@
 	name = "lipstick"
 
 /obj/item/weapon/lipstick/random/New()
-	..()
 	colour = pick("red","purple","lime","black","green","blue","white")
 	name = "[colour] lipstick"
 
 
-
 /obj/item/weapon/lipstick/attack_self(mob/user)
-	cut_overlays()
+	overlays.Cut()
 	user << "<span class='notice'>You twist \the [src] [open ? "closed" : "open"].</span>"
 	open = !open
 	if(open)
 		var/image/colored = image("icon"='icons/obj/items.dmi', "icon_state"="lipstick_uncap_color")
 		colored.color = colour
 		icon_state = "lipstick_uncap"
-		add_overlay(colored)
+		overlays += colored
 	else
 		icon_state = "lipstick"
 
@@ -108,7 +106,7 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "razor"
 	flags = CONDUCT
-	w_class = WEIGHT_CLASS_TINY
+	w_class = 1
 
 
 /obj/item/weapon/razor/proc/shave(mob/living/carbon/human/H, location = "mouth")
@@ -126,7 +124,7 @@
 		var/mob/living/carbon/human/H = M
 		var/location = user.zone_selected
 		if(location == "mouth")
-			if(!(FACEHAIR in H.dna.species.species_traits))
+			if(!(H.dna.species.specflags & FACEHAIR))
 				user << "<span class='warning'>There is no facial hair to shave!</span>"
 				return
 			if(!get_location_accessible(H, location))
@@ -154,7 +152,7 @@
 						shave(H, location)
 
 		else if(location == "head")
-			if(!(HAIR in H.dna.species.species_traits))
+			if(!(H.dna.species.specflags & HAIR))
 				user << "<span class='warning'>There is no hair to shave!</span>"
 				return
 			if(!get_location_accessible(H, location))

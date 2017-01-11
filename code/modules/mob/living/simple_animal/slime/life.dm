@@ -16,22 +16,15 @@
 	if(..())
 		if(buckled)
 			handle_feeding()
-		if(!stat) // Slimes in stasis don't lose nutrition, don't change mood and don't respond to speech
-			handle_nutrition()
-			handle_targets()
-			if (!ckey)
-				handle_mood()
-				handle_speech()
-
-// Unlike most of the simple animals, slimes support UNCONSCIOUS
-/mob/living/simple_animal/slime/update_stat()
-	if(stat == UNCONSCIOUS && health > 0)
-		return
-	..()
+		handle_nutrition()
+		handle_targets()
+		if (!ckey)
+			handle_mood()
+			handle_speech()
 
 /mob/living/simple_animal/slime/proc/AIprocess()  // the master AI process
 
-	if(AIproc || stat || client)
+	if(AIproc || stat == DEAD || client)
 		return
 
 	var/hungry = 0
@@ -55,7 +48,7 @@
 			break
 
 		if(Target)
-			if(locate(/mob/living/simple_animal/slime) in Target.buckled_mobs)
+			if(isslime(Target.buckled_mob))
 				Target = null
 				AIproc = 0
 				break
@@ -63,7 +56,7 @@
 				break
 
 			if(Target in view(1,src))
-				if(issilicon(Target))
+				if(istype(Target, /mob/living/silicon))
 					if(!Atkcool)
 						Atkcool = 1
 						spawn(45)
@@ -91,14 +84,15 @@
 					if(!Atkcool && Target.Adjacent(src))
 						Feedon(Target)
 
-			else if(Target in view(7, src))
-				if(!Target.Adjacent(src))
-				// Bug of the month candidate: slimes were attempting to move to target only if it was directly next to them, which caused them to target things, but not approach them
-					step_to(src, Target)
 			else
-				Target = null
-				AIproc = 0
-				break
+				if(Target in view(7, src))
+					if(!Target.Adjacent(src)) // Bug of the month candidate: slimes were attempting to move to target only if it was directly next to them, which caused them to target things, but not approach them
+						step_to(src, Target)
+
+				else
+					Target = null
+					AIproc = 0
+					break
 
 		var/sleeptime = movement_delay()
 		if(sleeptime <= 0)
@@ -115,7 +109,10 @@
 	//var/environment_heat_capacity = environment.heat_capacity()
 	var/loc_temp = get_temperature(environment)
 
-	bodytemperature += adjust_body_temperature(bodytemperature, loc_temp, 1)
+	if(loc_temp < 310.15) // a cold place
+		bodytemperature += adjust_body_temperature(bodytemperature, loc_temp, 1)
+	else // a hot place
+		bodytemperature += adjust_body_temperature(bodytemperature, loc_temp, 1)
 
 	//Account for massive pressure differences
 
@@ -132,27 +129,7 @@
 	else
 		Tempstun = 0
 
-	if(stat != DEAD)
-		var/bz_percentage =0
-		if("bz" in environment.gases)
-			bz_percentage = environment.gases["bz"][MOLES] / environment.total_moles()
-		var/stasis = (bz_percentage >= 0.05 && bodytemperature < (T0C + 100)) || force_stasis
-
-		if(stat == CONSCIOUS && stasis)
-			src << "<span class='danger'>Nerve gas in the air has put you in stasis!</span>"
-			stat = UNCONSCIOUS
-			powerlevel = 0
-			rabid = 0
-			update_canmove()
-			regenerate_icons()
-		else if(stat == UNCONSCIOUS && !stasis)
-			src << "<span class='notice'>You wake up from the stasis.</span>"
-			stat = CONSCIOUS
-			update_canmove()
-			regenerate_icons()
-
 	updatehealth()
-
 
 	return //TODO: DEFERRED
 
@@ -175,16 +152,13 @@
 
 /mob/living/simple_animal/slime/handle_status_effects()
 	..()
-	if(prob(30) && !stat)
+	if(prob(30))
 		adjustBruteLoss(-1)
 
 /mob/living/simple_animal/slime/proc/handle_feeding()
 	if(!ismob(buckled))
 		return
 	var/mob/M = buckled
-
-	if(stat)
-		Feedstop(silent = 1)
 
 	if(M.stat == DEAD) // our victim died
 		if(!client)
@@ -234,7 +208,7 @@
 		Feedstop(0, 0)
 		return
 
-	add_nutrition((rand(7,15) * config.damage_multiplier))
+	add_nutrition(rand(7,15))
 
 	//Heal yourself.
 	adjustBruteLoss(-3)
@@ -343,12 +317,12 @@
 					if(issilicon(L) && (rabid || attacked)) // They can't eat silicons, but they can glomp them in defence
 						targets += L // Possible target found!
 
-					if(ishuman(L)) //Ignore slime(wo)men
+					if(istype(L, /mob/living/carbon/human)) //Ignore slime(wo)men
 						var/mob/living/carbon/human/H = L
 						if(src.type in H.dna.species.ignored_by)
 							continue
 
-					if(locate(/mob/living/simple_animal/slime) in L.buckled_mobs) // Only one slime can latch on at a time.
+					if(isslime(L.buckled_mob)) // Only one slime can latch on at a time.
 						continue
 
 					targets += L // Possible target found!
@@ -393,7 +367,8 @@
 				else if(canmove && isturf(loc) && prob(33))
 					step(src, pick(cardinal))
 		else if(!AIproc)
-			addtimer(CALLBACK(src, .proc/AIprocess), 0)
+			spawn()
+				AIprocess()
 
 /mob/living/simple_animal/slime/handle_automated_movement()
 	return //slime random movement is currently handled in handle_targets()
@@ -436,84 +411,62 @@
 			else if (findtext(phrase, "follow"))
 				if (Leader)
 					if (Leader == who) // Already following him
-						to_say = pick("Yes...", "Lead...", "Follow...")
+						to_say = pick("Yes...", "Lead...", "Following...")
 					else if (Friends[who] > Friends[Leader]) // VIVA
 						Leader = who
 						to_say = "Yes... I follow [who]..."
 					else
 						to_say = "No... I follow [Leader]..."
 				else
-					if (Friends[who] >= SLIME_FRIENDSHIP_FOLLOW)
+					if (Friends[who] > 2)
 						Leader = who
 						to_say = "I follow..."
 					else // Not friendly enough
-						to_say = pick("No...", "I no follow...")
+						to_say = pick("No...", "I won't follow...")
 			else if (findtext(phrase, "stop"))
 				if (buckled) // We are asked to stop feeding
-					if (Friends[who] >= SLIME_FRIENDSHIP_STOPEAT)
+					if (Friends[who] > 4)
 						Feedstop()
 						Target = null
-						if (Friends[who] < SLIME_FRIENDSHIP_STOPEAT_NOANGRY)
+						if (Friends[who] < 7)
 							--Friends[who]
 							to_say = "Grrr..." // I'm angry but I do it
 						else
 							to_say = "Fine..."
 				else if (Target) // We are asked to stop chasing
-					if (Friends[who] >= SLIME_FRIENDSHIP_STOPCHASE)
+					if (Friends[who] > 3)
 						Target = null
-						if (Friends[who] < SLIME_FRIENDSHIP_STOPCHASE_NOANGRY)
+						if (Friends[who] < 6)
 							--Friends[who]
 							to_say = "Grrr..." // I'm angry but I do it
 						else
 							to_say = "Fine..."
 				else if (Leader) // We are asked to stop following
 					if (Leader == who)
-						to_say = "Yes... I stay..."
+						to_say = "Yes... I'll stay..."
 						Leader = null
 					else
 						if (Friends[who] > Friends[Leader])
 							Leader = null
-							to_say = "Yes... I stop..."
+							to_say = "Yes... I'll stop..."
 						else
-							to_say = "No... keep follow..."
+							to_say = "No... I'll keep following..."
 			else if (findtext(phrase, "stay"))
 				if (Leader)
 					if (Leader == who)
 						holding_still = Friends[who] * 10
-						to_say = "Yes... stay..."
+						to_say = "Yes... Staying..."
 					else if (Friends[who] > Friends[Leader])
 						holding_still = (Friends[who] - Friends[Leader]) * 10
-						to_say = "Yes... stay..."
+						to_say = "Yes... Staying..."
 					else
-						to_say = "No... keep follow..."
+						to_say = "No... I'll keep following..."
 				else
-					if (Friends[who] >= SLIME_FRIENDSHIP_STAY)
+					if (Friends[who] > 2)
 						holding_still = Friends[who] * 10
-						to_say = "Yes... stay..."
+						to_say = "Yes... Staying..."
 					else
-						to_say = "No... won't stay..."
-			else if (findtext(phrase, "attack"))
-				if (rabid && prob(20))
-					Target = who
-					AIprocess() //Wake up the slime's Target AI, needed otherwise this doesn't work
-					to_say = "ATTACK!?!?"
-				else if (Friends[who] >= SLIME_FRIENDSHIP_ATTACK)
-					for (var/mob/living/L in view(7,src)-list(src,who))
-						if (findtext(phrase, lowertext(L.name)))
-							if (isslime(L))
-								to_say = "NO... [L] slime friend"
-								--Friends[who] //Don't ask a slime to attack its friend
-							else if(!Friends[L] || Friends[L] < 1)
-								Target = L
-								AIprocess()//Wake up the slime's Target AI, needed otherwise this doesn't work
-								to_say = "Ok... I attack [Target]"
-							else
-								to_say = "No... like [L] ..."
-								--Friends[who] //Don't ask a slime to attack its friend
-							break
-				else
-					to_say = "No... no listen"
-
+						to_say = "No... I won't stay..."
 		speech_buffer = list()
 
 	//Speech starts here
@@ -541,7 +494,7 @@
 		if (prob(2) && prob(t))
 			var/phrases = list()
 			if (Target)
-				phrases += "[Target]... look yummy..."
+				phrases += "[Target]... looks tasty..."
 			if (nutrition < get_starve_nutrition())
 				phrases += "So... hungry..."
 				phrases += "Very... hungry..."
@@ -549,7 +502,7 @@
 				phrases += "Must... eat..."
 			else if (nutrition < get_hunger_nutrition())
 				phrases += "Hungry..."
-				phrases += "Where food?"
+				phrases += "Where is the food?"
 				phrases += "I want to eat..."
 			phrases += "Rawr..."
 			phrases += "Blop..."
@@ -572,7 +525,7 @@
 				phrases += "C... c..."
 			if (buckled)
 				phrases += "Nom..."
-				phrases += "Yummy..."
+				phrases += "Tasty..."
 			if (powerlevel > 3)
 				phrases += "Bzzz..."
 			if (powerlevel > 5)
@@ -582,9 +535,9 @@
 			if (mood == "sad")
 				phrases += "Bored..."
 			if (slimes_near)
-				phrases += "Slime friend..."
+				phrases += "Brother..."
 			if (slimes_near > 1)
-				phrases += "Slime friends..."
+				phrases += "Brothers..."
 			if (dead_slimes)
 				phrases += "What happened?"
 			if (!slimes_near)

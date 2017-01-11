@@ -3,7 +3,7 @@
 	desc = "Used to time things. Works well with contraptions which has to count down. Tick tock."
 	icon_state = "timer"
 	materials = list(MAT_METAL=500, MAT_GLASS=50)
-	origin_tech = "magnets=1;engineering=1"
+	origin_tech = "magnets=1"
 	attachable = 1
 
 	var/timing = 0
@@ -14,7 +14,7 @@
 
 /obj/item/device/assembly/timer/New()
 	..()
-	START_PROCESSING(SSobj, src)
+	SSobj.processing |= src
 
 /obj/item/device/assembly/timer/describe()
 	if(timing)
@@ -33,21 +33,24 @@
 /obj/item/device/assembly/timer/toggle_secure()
 	secured = !secured
 	if(secured)
-		START_PROCESSING(SSobj, src)
+		SSobj.processing |= src
 	else
 		timing = 0
-		STOP_PROCESSING(SSobj, src)
+		SSobj.processing.Remove(src)
 	update_icon()
 	return secured
 
 
 /obj/item/device/assembly/timer/proc/timer_end()
-	if(!secured || next_activate > world.time)
-		return FALSE
+	if((!secured)||(cooldown > 0))
+		return 0
 	pulse(0)
 	audible_message("\icon[src] *beep* *beep*", null, 3)
-	if(loop)
-		timing = 1
+	cooldown = 2
+	spawn(10)
+		process_cooldown()
+		if(loop)
+			timing = 1
 	update_icon()
 
 
@@ -61,10 +64,10 @@
 
 
 /obj/item/device/assembly/timer/update_icon()
-	cut_overlays()
+	overlays.Cut()
 	attached_overlays = list()
 	if(timing)
-		add_overlay("timer_timing")
+		overlays += "timer_timing"
 		attached_overlays += "timer_timing"
 	if(holder)
 		holder.update_icon()
@@ -113,3 +116,4 @@
 
 	if(usr)
 		attack_self(usr)
+

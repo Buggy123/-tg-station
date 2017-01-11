@@ -1,4 +1,4 @@
-
+//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
 
 /obj/machinery/computer/secure_data//TODO:SANITY
 	name = "security records console"
@@ -6,7 +6,7 @@
 	icon_screen = "security"
 	icon_keyboard = "security_key"
 	req_one_access = list(access_security, access_forensics_lockers)
-	circuit = /obj/item/weapon/circuitboard/computer/secure_data
+	circuit = /obj/item/weapon/circuitboard/secure_data
 	var/obj/item/weapon/card/id/scan = null
 	var/authenticated = null
 	var/rank = null
@@ -25,17 +25,14 @@
 
 
 /obj/machinery/computer/secure_data/attackby(obj/item/O, mob/user, params)
-	if(istype(O, /obj/item/weapon/card/id))
-		if(!scan)
-			if(!user.drop_item())
-				return
-			O.loc = src
-			scan = O
-			user << "<span class='notice'>You insert [O].</span>"
-		else
-			user << "<span class='warning'>There's already an ID card in the console.</span>"
+	if(istype(O, /obj/item/weapon/card/id) && !scan)
+		if(!user.drop_item())
+			return
+		O.loc = src
+		scan = O
+		user << "<span class='notice'>You insert [O].</span>"
 	else
-		return ..()
+		..()
 
 //Someone needs to break down the dat += into chunks instead of long ass lines.
 /obj/machinery/computer/secure_data/attack_hand(mob/user)
@@ -60,7 +57,7 @@
 					dat += {"
 
 		<head>
-			<script src="jquery.min.js"></script>
+			<script src="libraries.min.js"></script>
 			<script type='text/javascript'>
 
 				function updateSearch(){
@@ -246,10 +243,12 @@
 					else
 						dat += "Security Record Lost!<br>"
 						dat += text("<A href='?src=\ref[];choice=New Record (Security)'>New Security Record</A><br><br>", src)
-					dat += text("<A href='?src=\ref[];choice=Delete Record (ALL)'>Delete Record (ALL)</A><br><A href='?src=\ref[];choice=Print Record'>Print Record</A><BR><A href='?src=\ref[];choice=Print Poster'>Print Wanted Poster</A><BR><A href='?src=\ref[];choice=Return'>Back</A><BR>", src, src, src, src)
+					dat += text("<A href='?src=\ref[];choice=Delete Record (ALL)'>Delete Record (ALL)</A><br><A href='?src=\ref[];choice=Print Record'>Print Record</A><br>\n<A href='?src=\ref[];choice=Return'>Back</A><BR>", src, src, src)
 				else
 		else
 			dat += text("<A href='?src=\ref[];choice=Log In'>{Log In}</A>", src)
+	//user << browse(text("<HEAD><TITLE>Security Records</TITLE></HEAD><TT>[]</TT>", dat), "window=secure_rec;size=600x400")
+	//onclose(user, "secure_rec")
 	var/datum/browser/popup = new(user, "secure_rec", "Security Records Console", 600, 400)
 	popup.set_content(dat)
 	popup.set_title_image(user.browse_rsc_icon(src.icon, src.icon_state))
@@ -267,7 +266,7 @@ What a mess.*/
 		active1 = null
 	if(!( data_core.security.Find(active2) ))
 		active2 = null
-	if(usr.contents.Find(src) || (in_range(src, usr) && isturf(loc)) || issilicon(usr) || IsAdminGhost(usr))
+	if((usr.contents.Find(src) || (in_range(src, usr) && istype(loc, /turf))) || (istype(usr, /mob/living/silicon)) || IsAdminGhost(usr))
 		usr.set_machine(src)
 		switch(href_list["choice"])
 // SORTING!
@@ -293,13 +292,13 @@ What a mess.*/
 
 			if("Confirm Identity")
 				if(scan)
-					if(ishuman(usr) && !usr.get_active_held_item())
+					if(istype(usr,/mob/living/carbon/human) && !usr.get_active_hand())
 						usr.put_in_hands(scan)
 					else
 						scan.loc = get_turf(src)
 					scan = null
 				else
-					var/obj/item/I = usr.get_active_held_item()
+					var/obj/item/I = usr.get_active_hand()
 					if(istype(I, /obj/item/weapon/card/id))
 						if(!usr.drop_item())
 							return
@@ -313,7 +312,7 @@ What a mess.*/
 				active2 = null
 
 			if("Log In")
-				if(issilicon(usr))
+				if(istype(usr, /mob/living/silicon))
 					var/mob/living/silicon/borg = usr
 					active1 = null
 					active2 = null
@@ -415,36 +414,6 @@ What a mess.*/
 						P.name = text("SR-[] '[]'", data_core.securityPrintCount, "Record Lost")
 					P.info += "</TT>"
 					printing = null
-			if("Print Poster")
-				if(!( printing ))
-					var/wanted_name = stripped_input(usr, "Please enter an alias for the criminal:", "Print Wanted Poster", active1.fields["name"])
-					if(wanted_name)
-						var/default_description = "A poster declaring [wanted_name] to be a dangerous individual, wanted by Nanotrasen. Report any sightings to security immediately."
-						var/list/major_crimes = active2.fields["ma_crim"]
-						var/list/minor_crimes = active2.fields["mi_crim"]
-						if(major_crimes.len + minor_crimes.len)
-							default_description += "\n[wanted_name] is wanted for the following crimes:\n"
-						if(minor_crimes.len)
-							default_description += "\nMinor Crimes:"
-							for(var/datum/data/crime/c in active2.fields["mi_crim"])
-								default_description += "\n[c.crimeName]\n"
-								default_description += "[c.crimeDetails]\n"
-						if(major_crimes.len)
-							default_description += "\nMajor Crimes:"
-							for(var/datum/data/crime/c in active2.fields["ma_crim"])
-								default_description += "\n[c.crimeName]\n"
-								default_description += "[c.crimeDetails]\n"
-
-						var/info = stripped_multiline_input(usr, "Please input a description for the poster:", "Print Wanted Poster", default_description, null)
-						if(info)
-							playsound(loc, 'sound/items/poster_being_created.ogg', 100, 1)
-							printing = 1
-							sleep(30)
-							if((istype(active1, /datum/data/record) && data_core.general.Find(active1)))//make sure the record still exists.
-								var/obj/item/weapon/photo/photo = active1.fields["photo_front"]
-								new /obj/item/weapon/poster/legit/wanted(src.loc, photo.img, wanted_name, info)
-							printing = 0
-
 //RECORD DELETE
 			if("Delete All Records")
 				temp = ""
@@ -469,7 +438,7 @@ What a mess.*/
 				var/counter = 1
 				while(active2.fields[text("com_[]", counter)])
 					counter++
-				active2.fields[text("com_[]", counter)] = text("Made by [] ([]) on [] [], []<BR>[]", src.authenticated, src.rank, worldtime2text(), time2text(world.realtime, "MMM DD"), year_integer+540, t1)
+				active2.fields[text("com_[]", counter)] = text("Made by [] ([]) on [] [], []<BR>[]", src.authenticated, src.rank, worldtime2text(), time2text(world.realtime, "MMM DD"), year_integer+540, t1,)
 
 			if("Delete Record (ALL)")
 				if(active1)
@@ -732,14 +701,14 @@ What a mess.*/
 
 /obj/machinery/computer/secure_data/proc/get_photo(mob/user)
 	var/obj/item/weapon/photo/P = null
-	if(issilicon(user))
+	if(istype(user, /mob/living/silicon))
 		var/mob/living/silicon/tempAI = user
 		var/datum/picture/selection = tempAI.GetPhoto()
 		if(selection)
 			P = new()
 			P.photocreate(selection.fields["icon"], selection.fields["img"], selection.fields["desc"])
-	else if(istype(user.get_active_held_item(), /obj/item/weapon/photo))
-		P = user.get_active_held_item()
+	else if(istype(user.get_active_hand(), /obj/item/weapon/photo))
+		P = user.get_active_hand()
 	return P
 
 /obj/machinery/computer/secure_data/emp_act(severity)

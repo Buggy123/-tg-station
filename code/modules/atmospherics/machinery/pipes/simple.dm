@@ -30,9 +30,9 @@ The regular pipe you see everywhere, including bent ones.
 
 /obj/machinery/atmospherics/pipe/simple/proc/normalize_dir()
 	if(dir==SOUTH)
-		setDir(NORTH)
+		dir = NORTH
 	else if(dir==WEST)
-		setDir(EAST)
+		dir = EAST
 
 /obj/machinery/atmospherics/pipe/simple/update_icon()
 	normalize_dir()

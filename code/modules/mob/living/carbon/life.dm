@@ -4,24 +4,29 @@
 
 	if (notransform)
 		return
+	if(!loc)
+		return
 
 	if(damageoverlaytemp)
 		damageoverlaytemp = 0
 		update_damage_hud()
 
-	if(..()) //not dead
-		handle_blood()
+	if(..())
+		. = 1
 
-	if(stat != DEAD)
-		for(var/V in internal_organs)
-			var/obj/item/organ/O = V
+		for(var/obj/item/organ/internal/O in internal_organs)
 			O.on_life()
+
+	//grab processing
+	if(istype(l_hand, /obj/item/weapon/grab))
+		var/obj/item/weapon/grab/G = l_hand
+		G.process()
+	if(istype(r_hand, /obj/item/weapon/grab))
+		var/obj/item/weapon/grab/G = r_hand
+		G.process()
 
 	//Updates the number of stored chemicals for powers
 	handle_changeling()
-
-	if(stat != DEAD)
-		return 1
 
 ///////////////
 // BREATHING //
@@ -49,7 +54,7 @@
 
 	var/datum/gas_mixture/breath
 
-	if(health <= HEALTH_THRESHOLD_CRIT || (pulledby && pulledby.grab_state >= GRAB_KILL && !getorganslot("breathing_tube")))
+	if(health <= config.health_threshold_crit)
 		losebreath++
 
 	//Suffocate
@@ -85,7 +90,6 @@
 
 	if(breath)
 		loc.assume_air(breath)
-		air_update_turf()
 
 /mob/living/carbon/proc/has_smoke_protection()
 	return 0
@@ -118,7 +122,7 @@
 	var/breath_pressure = (breath.total_moles()*R_IDEAL_GAS_EQUATION*breath.temperature)/BREATH_VOLUME
 
 	var/list/breath_gases = breath.gases
-	breath.assert_gases("o2","plasma","co2","n2o", "bz")
+	breath.assert_gases("o2","plasma","co2","n2o")
 
 	var/O2_partialpressure = (breath_gases["o2"][MOLES]/breath.total_moles())*breath_pressure
 	var/Toxins_partialpressure = (breath_gases["plasma"][MOLES]/breath.total_moles())*breath_pressure
@@ -183,15 +187,6 @@
 		else if(SA_partialpressure > 0.01)
 			if(prob(20))
 				emote(pick("giggle","laugh"))
-
-	//BZ (Facepunch port of their Agent B)
-	if(breath_gases["bz"])
-		var/bz_partialpressure = (breath_gases["bz"][MOLES]/breath.total_moles())*breath_pressure
-		if(bz_partialpressure > 1)
-			hallucination += 20
-		else if(bz_partialpressure > 0.01)
-			hallucination += 5//Removed at 2 per tick so this will slowly build up
-
 	breath.garbage_collect()
 
 	//BREATH TEMPERATURE
@@ -215,17 +210,14 @@
 			update_internals_hud_icon(1)
 			return internal.remove_air_volume(volume_needed)
 
-/mob/living/carbon/proc/handle_blood()
-	return
-
 /mob/living/carbon/proc/handle_changeling()
-	if(mind && hud_used && hud_used.lingchemdisplay)
+	if(mind && hud_used)
 		if(mind.changeling)
 			mind.changeling.regenerate(src)
 			hud_used.lingchemdisplay.invisibility = 0
 			hud_used.lingchemdisplay.maptext = "<div align='center' valign='middle' style='position:relative; top:0px; left:6px'><font color='#dd66dd'>[round(mind.changeling.chem_charges)]</font></div>"
 		else
-			hud_used.lingchemdisplay.invisibility = INVISIBILITY_ABSTRACT
+			hud_used.lingchemdisplay.invisibility = 101
 
 
 /mob/living/carbon/handle_mutations_and_radiation()
@@ -312,7 +304,7 @@
 	if(sleeping)
 		handle_dreams()
 		AdjustSleeping(-1)
-		if(prob(10) && health>HEALTH_THRESHOLD_CRIT)
+		if(prob(10) && health>config.health_threshold_crit)
 			emote("snore")
 
 	var/restingpwr = 1 + 4 * resting
@@ -358,6 +350,9 @@
 			AdjustSleeping(1)
 			Paralyse(5)
 
+	if(confused)
+		confused = max(0, confused - 1)
+
 	//Jitteryness
 	if(jitteriness)
 		do_jitter_animation(jitteriness)
@@ -387,6 +382,8 @@
 	var/body_temperature_difference = 310.15 - bodytemperature
 	switch(bodytemperature)
 		if(-INFINITY to 260.15) //260.15 is 310.15 - 50, the temperature where you start to feel effects.
+			if(nutrition >= 2) //If we are very, very cold we'll use up quite a bit of nutriment to heat us up.
+				nutrition -= 2
 			bodytemperature += max((body_temperature_difference * metabolism_efficiency / BODYTEMP_AUTORECOVERY_DIVISOR), BODYTEMP_AUTORECOVERY_MINIMUM)
 		if(260.15 to 310.15)
 			bodytemperature += max(body_temperature_difference * metabolism_efficiency / BODYTEMP_AUTORECOVERY_DIVISOR, min(body_temperature_difference, BODYTEMP_AUTORECOVERY_MINIMUM/4))

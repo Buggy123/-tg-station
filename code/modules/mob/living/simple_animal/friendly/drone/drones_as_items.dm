@@ -20,7 +20,7 @@
 	..()
 	var/area/A = get_area(src)
 	if(A)
-		notify_ghosts("A drone shell has been created in \the [A.name].", source = src, action=NOTIFY_ATTACK)
+		notify_ghosts("A drone shell has been created in \the [A.name].", source = src, attack_not_jump = 1)
 
 /obj/item/drone_shell/attack_ghost(mob/user)
 	if(jobban_isbanned(user,"drone"))
@@ -35,10 +35,9 @@
 		user << "Can't become a drone before the game has started."
 		return
 	var/be_drone = alert("Become a drone? (Warning, You can no longer be cloned!)",,"Yes","No")
-	if(be_drone == "No" || qdeleted(src) || !isobserver(user))
+	if(be_drone == "No" || gc_destroyed)
 		return
 	var/mob/living/simple_animal/drone/D = new drone_type(get_turf(loc))
-	D.admin_spawned = admin_spawned
 	D.key = user.key
 	qdel(src)
 
@@ -55,7 +54,7 @@
 	if(!drone)
 		return
 
-	if(isliving(loc))
+	if(istype(loc, /mob/living))
 		var/mob/living/L = loc
 		L << "<span class='warning'>[drone] is trying to escape!</span>"
 		if(!do_after(drone, 50, target = L))
@@ -65,7 +64,7 @@
 	contents -= drone
 	drone.loc = get_turf(src)
 	drone.reset_perspective()
-	drone.setDir(SOUTH )//Looks better
+	drone.dir = SOUTH //Looks better
 	drone.visible_message("<span class='warning'>[drone] uncurls!</span>")
 	drone = null
 	qdel(src)
@@ -74,7 +73,7 @@
 /obj/item/clothing/head/drone_holder/relaymove()
 	uncurl()
 
-/obj/item/clothing/head/drone_holder/container_resist(mob/living/user)
+/obj/item/clothing/head/drone_holder/container_resist()
 	uncurl()
 
 

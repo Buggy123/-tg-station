@@ -3,6 +3,7 @@
 	desc = "Better stay away from that thing."
 	density = 0
 	anchored = 1
+	layer = 3
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "uglymine"
 	var/triggered = 0
@@ -11,10 +12,10 @@
 	victim << "<span class='danger'>*click*</span>"
 
 /obj/effect/mine/Crossed(AM as mob|obj)
-	if(ismob(AM))
-		var/mob/MM = AM
-		if(!(MM.movement_type & FLYING))
-			triggermine(AM)
+	if(isanimal(AM))
+		var/mob/living/simple_animal/SA = AM
+		if(!SA.flying)
+			triggermine(SA)
 	else
 		triggermine(AM)
 
@@ -55,26 +56,26 @@
 /obj/effect/mine/kickmine/mineEffect(mob/victim)
 	if(isliving(victim) && victim.client)
 		victim << "<span class='userdanger'>You have been kicked FOR NO REISIN!</span>"
-		qdel(victim.client)
+		del(victim.client)
 
 
 /obj/effect/mine/gas
 	name = "oxygen mine"
 	var/gas_amount = 360
-	var/gas_type = "o2"
+	var/gas_type = SPAWN_OXYGEN
 
 /obj/effect/mine/gas/mineEffect(mob/victim)
-	atmos_spawn_air("[gas_type]=[gas_amount]")
+	atmos_spawn_air(gas_type, gas_amount)
 
 
 /obj/effect/mine/gas/plasma
 	name = "plasma mine"
-	gas_type = "plasma"
+	gas_type = SPAWN_TOXINS
 
 
 /obj/effect/mine/gas/n2o
 	name = "\improper N2O mine"
-	gas_type = "n2o"
+	gas_type = SPAWN_N2O
 
 
 /obj/effect/mine/sound
@@ -105,7 +106,7 @@
 	if(triggered)
 		return
 	triggered = 1
-	invisibility = INVISIBILITY_ABSTRACT
+	invisibility = 101
 	mineEffect(victim)
 	qdel(src)
 
@@ -114,13 +115,12 @@
 	name = "Red Orb"
 	desc = "You feel angry just looking at it."
 	duration = 1200 //2min
-	color = "#FF0000"
+	color = "red"
 
 /obj/effect/mine/pickup/bloodbath/mineEffect(mob/living/carbon/victim)
 	if(!victim.client || !istype(victim))
 		return
-	victim << "<span class='reallybig redtext'>RIP AND TEAR</span>"
-	victim << 'sound/misc/e1m1.ogg'
+	victim << "<span class='reallybig redtext'>KILL EM ALL</span>"
 	var/old_color = victim.client.color
 	var/red_splash = list(1,0,0,0.8,0.2,0, 0.8,0,0.2,0.1,0,0)
 	var/pure_red = list(0,0,0,0,0,0,0,0,0,1,0,0)
@@ -128,12 +128,12 @@
 	spawn(0)
 		new /obj/effect/hallucination/delusion(victim.loc,victim,force_kind="demon",duration=duration,skip_nearby=0)
 
-	var/obj/item/weapon/twohanded/required/chainsaw/doomslayer/chainsaw = new(victim.loc)
+	var/obj/item/weapon/twohanded/required/chainsaw/chainsaw = new(victim.loc)
 	chainsaw.flags |= NODROP
-	victim.drop_all_held_items()
+	victim.drop_r_hand()
+	victim.drop_l_hand()
 	victim.put_in_hands(chainsaw)
-	chainsaw.attack_self(victim)
-	chainsaw.wield(victim)
+
 	victim.reagents.add_reagent("adminordrazine",25)
 
 	victim.client.color = pure_red
@@ -141,14 +141,14 @@
 	sleep(10)
 	animate(victim.client,color = old_color, time = duration)//, easing = SINE_EASING|EASE_OUT)
 	sleep(duration)
-	victim << "<span class='notice'>Your bloodlust seeps back into the bog of your subconscious and you regain self control.<span>"
+	victim << "<span class='notice'>You feel calm again.<span>"
 	qdel(chainsaw)
 	qdel(src)
 
 /obj/effect/mine/pickup/healing
 	name = "Blue Orb"
 	desc = "You feel better just looking at it."
-	color = "#0000FF"
+	color = "blue"
 
 /obj/effect/mine/pickup/healing/mineEffect(mob/living/carbon/victim)
 	if(!victim.client || !istype(victim))
@@ -159,7 +159,7 @@
 /obj/effect/mine/pickup/speed
 	name = "Yellow Orb"
 	desc = "You feel faster just looking at it."
-	color = "#FFFF00"
+	color = "yellow"
 	duration = 300
 
 /obj/effect/mine/pickup/speed/mineEffect(mob/living/carbon/victim)

@@ -18,7 +18,7 @@
 	density = 0
 
 /obj/item/target/proc/removeOverlays()
-	cut_overlays()
+	overlays.Cut()
 
 /obj/item/target/Move()
 	..()
@@ -30,9 +30,7 @@
 		var/obj/item/weapon/weldingtool/WT = W
 		if(WT.remove_fuel(0, user))
 			removeOverlays()
-			user << "<span class='notice'>You slice off [src]'s uneven chunks of aluminium and scorch marks.</span>"
-	else
-		return ..()
+			usr << "<span class='notice'>You slice off [src]'s uneven chunks of aluminium and scorch marks.</span>"
 
 /obj/item/target/attack_hand(mob/user)
 	if(pinnedLoc)
@@ -77,14 +75,14 @@
 		I.pixel_x = p_x - 1 //offset correction
 		I.pixel_y = p_y - 1
 		if(decaltype == DECALTYPE_SCORCH)
-			I.setDir(pick(NORTH,SOUTH,EAST,WEST))// random scorch design
+			I.dir = pick(NORTH,SOUTH,EAST,WEST)// random scorch design
 			if(P.damage >= 20 || istype(P, /obj/item/projectile/beam/practice))
-				I.setDir(pick(NORTH,SOUTH,EAST,WEST))
+				I.dir = pick(NORTH,SOUTH,EAST,WEST)
 			else
 				I.icon_state = "light_scorch"
 		else
 			I.icon_state = "dent"
-		add_overlay(I)
+		overlays += I
 		return
 	return -1
 

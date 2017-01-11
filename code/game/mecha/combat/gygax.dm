@@ -4,9 +4,9 @@
 	icon_state = "gygax"
 	step_in = 3
 	dir_in = 1 //Facing North.
-	obj_integrity = 250
+	health = 250
 	deflect_chance = 5
-	armor = list(melee = 25, bullet = 20, laser = 30, energy = 15, bomb = 0, bio = 0, rad = 0, fire = 100, acid = 100)
+	damage_absorption = list("brute"=0.75,"fire"=1,"bullet"=0.8,"laser"=0.7,"energy"=0.85,"bomb"=1)
 	max_temperature = 25000
 	infra_luminosity = 6
 	wreckage = /obj/structure/mecha_wreckage/gygax
@@ -18,11 +18,11 @@
 	desc = "A lightweight exosuit, painted in a dark scheme. This model appears to have some modifications."
 	name = "\improper Dark Gygax"
 	icon_state = "darkgygax"
-	obj_integrity = 300
+	health = 300
 	deflect_chance = 15
-	armor = list(melee = 40, bullet = 40, laser = 50, energy = 35, bomb = 20, bio = 0, rad = 0, fire = 100, acid = 100)
+	damage_absorption = list("brute"=0.6,"fire"=0.8,"bullet"=0.6,"laser"=0.5,"energy"=0.65,"bomb"=0.8)
 	max_temperature = 35000
-	leg_overload_coeff = 100
+	leg_overload_coeff = 1
 	operation_req_access = list(access_syndicate)
 	wreckage = /obj/structure/mecha_wreckage/gygax/dark
 	max_equip = 4
@@ -49,20 +49,22 @@
 	cell.maxcharge = 30000
 
 
-/obj/mecha/combat/gygax/GrantActions(mob/living/user, human_occupant = 0)
+/obj/mecha/combat/gygax/GrantActions(var/mob/living/user, var/human_occupant = 0)
 	..()
-	overload_action.Grant(user, src)
+	overload_action.chassis = src
+	overload_action.Grant(user)
 
-/obj/mecha/combat/gygax/dark/GrantActions(mob/living/user, human_occupant = 0)
+/obj/mecha/combat/gygax/dark/GrantActions(var/mob/living/user, var/human_occupant = 0)
 	..()
-	thrusters_action.Grant(user, src)
+	thrusters_action.chassis = src
+	thrusters_action.Grant(user)
 
 
-/obj/mecha/combat/gygax/RemoveActions(mob/living/user, human_occupant = 0)
+/obj/mecha/combat/gygax/RemoveActions(var/mob/living/user, var/human_occupant = 0)
 	..()
 	overload_action.Remove(user)
 
-/obj/mecha/combat/gygax/dark/RemoveActions(mob/living/user, human_occupant = 0)
+/obj/mecha/combat/gygax/dark/RemoveActions(var/mob/living/user, var/human_occupant = 0)
 	..()
 	thrusters_action.Remove(user)
 

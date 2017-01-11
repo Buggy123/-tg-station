@@ -8,8 +8,6 @@ var/list/possible_uplinker_IDs = list("Alfa","Bravo","Charlie","Delta","Echo","F
 	icon_state = "tcstation"
 	icon_keyboard = "tcstation_key"
 	icon_screen = "syndie"
-	clockwork = TRUE //it'd look weird, at least if ratvar ever got there
-	resistance_flags = INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | ACID_PROOF
 
 /////////////////////////////////////////////
 /obj/machinery/computer/telecrystals/uplinker
@@ -31,25 +29,26 @@ var/list/possible_uplinker_IDs = list("Alfa","Bravo","Charlie","Delta","Echo","F
 		name = "[name] [rand(1,999)]"
 
 /obj/machinery/computer/telecrystals/uplinker/attackby(obj/item/O, mob/user, params)
-	if(uplinkholder)
-		user << "<span class='notice'>The [src] already has an uplink in it.</span>"
-		return
-	if(O.hidden_uplink)
-		var/obj/item/I = user.get_active_held_item()
-		if(!user.drop_item())
+	if(istype(O, /obj/item))
+		if(uplinkholder)
+			user << "<span class='notice'>The [src] already has an uplink in it.</span>"
 			return
-		uplinkholder = I
-		I.loc = src
-		I.add_fingerprint(user)
-		update_icon()
-		updateUsrDialog()
-	else
-		user << "<span class='notice'>The [O] doesn't appear to be an uplink...</span>"
+		if(O.hidden_uplink)
+			var/obj/item/I = user.get_active_hand()
+			if(!user.drop_item())
+				return
+			uplinkholder = I
+			I.loc = src
+			I.add_fingerprint(user)
+			update_icon()
+			updateUsrDialog()
+		else
+			user << "<span class='notice'>The [O] doesn't appear to be an uplink...</span>"
 
 /obj/machinery/computer/telecrystals/uplinker/update_icon()
 	..()
 	if(uplinkholder)
-		add_overlay("[initial(icon_state)]-closed")
+		overlays += "[initial(icon_state)]-closed"
 
 /obj/machinery/computer/telecrystals/uplinker/proc/ejectuplink()
 	if(uplinkholder)
@@ -147,7 +146,7 @@ var/list/possible_uplinker_IDs = list("Alfa","Bravo","Charlie","Delta","Echo","F
 	..()
 	var/danger
 	danger = joined_player_list.len - ticker.mode.syndicates.len
-	danger = Ceiling(danger, 10)
+	while(!IsMultiple(++danger,10))//Just round up to the nearest multiple of ten.
 	scaleTC(danger)
 
 /obj/machinery/computer/telecrystals/boss/proc/scaleTC(amt)//Its own proc, since it'll probably need a lot of tweaks for balance, use a fancier algorhithm, etc.

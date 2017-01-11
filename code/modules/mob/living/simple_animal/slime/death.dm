@@ -3,11 +3,11 @@
 		return
 	if(!gibbed)
 		if(is_adult)
-			var/mob/living/simple_animal/slime/M = new(loc, colour)
-			M.rabid = TRUE
+			var/mob/living/simple_animal/slime/M = new /mob/living/simple_animal/slime(loc)
+			M.colour = colour
+			M.rabid = 1
 			M.regenerate_icons()
-
-			is_adult = FALSE
+			is_adult = 0
 			maxHealth = 150
 			for(var/datum/action/innate/slime/reproduce/R in actions)
 				R.Remove(src)
@@ -15,7 +15,8 @@
 			E.Grant(src)
 			revive(full_heal = 1)
 			regenerate_icons()
-			update_name()
+			number = rand(1, 1000)
+			name = "[colour] [is_adult ? "adult" : "baby"] slime ([number])"
 			return
 
 	if(buckled)

@@ -5,7 +5,7 @@
 	name = "bluespace gigabeacon"
 	desc = "A device that draws power from bluespace and creates a permanent tracking beacon."
 	level = 1		// underfloor
-	layer = LOW_OBJ_LAYER
+	layer = 2.5
 	anchored = 1
 	use_power = 1
 	idle_power_usage = 0
@@ -28,7 +28,7 @@
 
 // update the invisibility and icon
 /obj/machinery/bluespace_beacon/hide(intact)
-	invisibility = intact ? INVISIBILITY_MAXIMUM : 0
+	invisibility = intact ? 101 : 0
 	updateicon()
 
 // update the icon_state

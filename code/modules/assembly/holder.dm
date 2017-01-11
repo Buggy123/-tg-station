@@ -5,7 +5,7 @@
 	item_state = "assembly"
 	flags = CONDUCT
 	throwforce = 5
-	w_class = WEIGHT_CLASS_SMALL
+	w_class = 2
 	throw_speed = 2
 	throw_range = 7
 
@@ -36,11 +36,11 @@
 		a_right = A
 
 /obj/item/device/assembly_holder/update_icon()
-	cut_overlays()
+	overlays.Cut()
 	if(a_left)
-		add_overlay("[a_left.icon_state]_left")
+		overlays += "[a_left.icon_state]_left"
 		for(var/O in a_left.attached_overlays)
-			add_overlay("[O]_l")
+			overlays += "[O]_l"
 
 	if(a_right)
 		var/list/images = list()
@@ -50,7 +50,7 @@
 		var/matrix = matrix(-1, 0, 0, 0, 1, 0)
 		for(var/image/I in images)
 			I.transform = matrix
-			add_overlay(I)
+			overlays += I
 
 	if(master)
 		master.update_icon()

@@ -10,12 +10,9 @@
 	maturation = 8
 	yield = 6
 	potency = 20
+	oneharvest = 1
 	growthstages = 3
-	growing_icon = 'icons/obj/hydroponics/growing_flowers.dmi'
-	icon_grow = "poppy-grow"
-	icon_dead = "poppy-dead"
 	mutatelist = list(/obj/item/seeds/poppy/geranium, /obj/item/seeds/poppy/lily)
-	reagents_add = list("bicaridine" = 0.2, "nutriment" = 0.05)
 
 /obj/item/weapon/reagent_containers/food/snacks/grown/poppy
 	seed = /obj/item/seeds/poppy
@@ -24,6 +21,7 @@
 	icon_state = "poppy"
 	slot_flags = SLOT_HEAD
 	filling_color = "#FF6347"
+	reagents_add = list("salglu_solution" = 0.05, "nutriment" = 0.05)
 	bitesize_mod = 3
 
 // Lily
@@ -75,10 +73,9 @@
 	production = 1
 	yield = 2
 	potency = 30
+	oneharvest = 1
 	growthstages = 4
-	genes = list(/datum/plant_gene/trait/plant_type/weed_hardy)
-	growing_icon = 'icons/obj/hydroponics/growing_flowers.dmi'
-	reagents_add = list("nutriment" = 0.04)
+	plant_type = 1
 
 /obj/item/weapon/reagent_containers/food/snacks/grown/harebell
 	seed = /obj/item/seeds/harebell
@@ -87,8 +84,30 @@
 	icon_state = "harebell"
 	slot_flags = SLOT_HEAD
 	filling_color = "#E6E6FA"
+	reagents_add = list("nutriment" = 0.05)
 	bitesize_mod = 3
 
+
+// Moonflower
+/obj/item/seeds/sunflower/moonflower
+	name = "pack of moonflower seeds"
+	desc = "These seeds grow into moonflowers."
+	icon_state = "seed-moonflower"
+	species = "moonflower"
+	plantname = "Moonflowers"
+	product = /obj/item/weapon/reagent_containers/food/snacks/grown/moonflower
+	mutatelist = list()
+	rarity = 15
+
+/obj/item/weapon/reagent_containers/food/snacks/grown/moonflower
+	seed = /obj/item/seeds/sunflower/moonflower
+	name = "moonflower"
+	desc = "Store in a location at least 50 yards away from werewolves."
+	icon_state = "moonflower"
+	slot_flags = SLOT_HEAD
+	filling_color = "#E6E6FA"
+	reagents_add = list("moonshine" = 0.1, "vitamin" = 0.02, "nutriment" = 0.02)
+	bitesize_mod = 2
 
 // Sunflower
 /obj/item/seeds/sunflower
@@ -101,12 +120,9 @@
 	endurance = 20
 	production = 2
 	yield = 2
+	oneharvest = 1
 	growthstages = 3
-	growing_icon = 'icons/obj/hydroponics/growing_flowers.dmi'
-	icon_grow = "sunflower-grow"
-	icon_dead = "sunflower-dead"
 	mutatelist = list(/obj/item/seeds/sunflower/moonflower, /obj/item/seeds/sunflower/novaflower)
-	reagents_add = list("cornoil" = 0.08, "nutriment" = 0.04)
 
 /obj/item/weapon/grown/sunflower // FLOWER POWER!
 	seed = /obj/item/seeds/sunflower
@@ -117,34 +133,13 @@
 	force = 0
 	slot_flags = SLOT_HEAD
 	throwforce = 0
-	w_class = WEIGHT_CLASS_TINY
+	w_class = 1
 	throw_speed = 1
 	throw_range = 3
 
 /obj/item/weapon/grown/sunflower/attack(mob/M, mob/user)
 	M << "<font color='green'><b> [user] smacks you with a sunflower!</font><font color='yellow'><b>FLOWER POWER<b></font>"
 	user << "<font color='green'>Your sunflower's </font><font color='yellow'><b>FLOWER POWER</b></font><font color='green'>strikes [M]</font>"
-
-// Moonflower
-/obj/item/seeds/sunflower/moonflower
-	name = "pack of moonflower seeds"
-	desc = "These seeds grow into moonflowers."
-	icon_state = "seed-moonflower"
-	species = "moonflower"
-	plantname = "Moonflowers"
-	product = /obj/item/weapon/reagent_containers/food/snacks/grown/moonflower
-	mutatelist = list()
-	reagents_add = list("moonshine" = 0.2, "vitamin" = 0.02, "nutriment" = 0.02)
-	rarity = 15
-
-/obj/item/weapon/reagent_containers/food/snacks/grown/moonflower
-	seed = /obj/item/seeds/sunflower/moonflower
-	name = "moonflower"
-	desc = "Store in a location at least 50 yards away from werewolves."
-	icon_state = "moonflower"
-	slot_flags = SLOT_HEAD
-	filling_color = "#E6E6FA"
-	bitesize_mod = 2
 
 // Novaflower
 /obj/item/seeds/sunflower/novaflower
@@ -155,7 +150,6 @@
 	plantname = "Novaflowers"
 	product = /obj/item/weapon/grown/novaflower
 	mutatelist = list()
-	reagents_add = list("condensedcapsaicin" = 0.25, "capsaicin" = 0.3, "nutriment" = 0)
 	rarity = 20
 
 /obj/item/weapon/grown/novaflower
@@ -167,29 +161,30 @@
 	force = 0
 	slot_flags = SLOT_HEAD
 	throwforce = 0
-	w_class = WEIGHT_CLASS_TINY
+	w_class = 1
 	throw_speed = 1
 	throw_range = 3
+	plant_type = 0
 	attack_verb = list("roasted", "scorched", "burned")
 
 /obj/item/weapon/grown/novaflower/add_juice()
-	..()
-	force = round((5 + seed.potency / 5), 1)
+	if(..())
+		reagents.add_reagent("nutriment", 1)
+		reagents.add_reagent("capsaicin", round((potency / 3.5), 1))
+		reagents.add_reagent("condensedcapsaicin", round((potency / 4), 1))
+	force = round((5 + potency / 5), 1)
 
 /obj/item/weapon/grown/novaflower/attack(mob/living/carbon/M, mob/user)
-	if(!..())
-		return
-	if(isliving(M))
+	if(!..()) return
+	if(istype(M, /mob/living))
 		M << "<span class='danger'>You are lit on fire from the intense heat of the [name]!</span>"
-		M.adjust_fire_stacks(seed.potency / 20)
-		if(M.IgniteMob())
-			message_admins("[key_name_admin(user)] set [key_name_admin(M)] on fire")
-			log_game("[key_name(user)] set [key_name(M)] on fire")
+		M.adjust_fire_stacks(potency / 20)
+		M.IgniteMob()
 
 /obj/item/weapon/grown/novaflower/afterattack(atom/A as mob|obj, mob/user,proximity)
 	if(!proximity) return
-	if(force > 0)
-		force -= rand(1, (force / 3) + 1)
+	if(endurance > 0)
+		endurance -= rand(1, (endurance / 3) + 1)
 	else
 		usr << "<span class='warning'>All the petals have fallen off the [name] from violent whacking!</span>"
 		usr.unEquip(src)

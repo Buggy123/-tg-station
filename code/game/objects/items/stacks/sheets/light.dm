@@ -4,7 +4,7 @@
 	desc = "A glass tile, which is wired, somehow."
 	icon = 'icons/obj/tiles.dmi'
 	icon_state = "glass_wire"
-	w_class = WEIGHT_CLASS_NORMAL
+	w_class = 3
 	force = 3
 	throwforce = 5
 	throw_speed = 3
@@ -13,7 +13,7 @@
 	max_amount = 60
 
 /obj/item/stack/light_w/attackby(obj/item/O, mob/user, params)
-
+	..()
 	if(istype(O,/obj/item/weapon/wirecutters))
 		var/obj/item/stack/cable_coil/CC = new (user.loc)
 		CC.amount = 5
@@ -25,14 +25,13 @@
 			user.unEquip(src, 1)
 			qdel(src)
 
-	else if(istype(O, /obj/item/stack/sheet/metal))
+	if(istype(O, /obj/item/stack/sheet/metal))
 		var/obj/item/stack/sheet/metal/M = O
 		if (M.use(1))
 			use(1)
-			var/obj/item/L = PoolOrNew(/obj/item/stack/tile/light, user.loc)
+			var/obj/item/stack/tile/light/L = new (user.loc)
 			user << "<span class='notice'>You make a light tile.</span>"
 			L.add_fingerprint(user)
 		else
 			user << "<span class='warning'>You need one metal sheet to finish the light tile!</span>"
-	else
-		return ..()
+			return

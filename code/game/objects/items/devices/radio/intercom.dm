@@ -3,20 +3,19 @@
 	desc = "Talk through this."
 	icon_state = "intercom"
 	anchored = 1
-	w_class = WEIGHT_CLASS_BULKY
+	w_class = 4
 	canhear_range = 2
 	var/number = 0
 	var/anyai = 1
 	var/mob/living/silicon/ai/ai = list()
 	var/last_tick //used to delay the powercheck
-	dog_fashion = null
 
 /obj/item/device/radio/intercom/New()
 	..()
-	START_PROCESSING(SSobj, src)
+	SSobj.processing += src
 
 /obj/item/device/radio/intercom/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	SSobj.processing -= src
 	return ..()
 
 /obj/item/device/radio/intercom/attack_ai(mob/user)
@@ -67,5 +66,5 @@
 		else
 			icon_state = "intercom"
 
-/obj/item/device/radio/intercom/add_blood(list/blood_dna)
-	return 0
+/obj/item/device/radio/intercom/rejects_blood()
+	return 1

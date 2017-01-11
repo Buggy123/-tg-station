@@ -7,7 +7,7 @@
 	return
 
 
-/turf/open/hotspot_expose(exposed_temperature, exposed_volume, soh)
+/turf/simulated/hotspot_expose(exposed_temperature, exposed_volume, soh)
 	var/datum/gas_mixture/air_contents = return_air()
 	if(!air_contents)
 		return 0
@@ -46,9 +46,10 @@
 /obj/effect/hotspot
 	anchored = 1
 	mouse_opacity = 0
+	unacidable = 1//So you can't melt fire with acid.
 	icon = 'icons/effects/fire.dmi'
 	icon_state = "1"
-	layer = ABOVE_OPEN_TURF_LAYER
+	layer = TURF_LAYER
 	luminosity = 3
 
 	var/volume = 125
@@ -60,16 +61,14 @@
 	..()
 	SSair.hotspots += src
 	perform_exposure()
-	setDir(pick(cardinal))
+	dir = pick(cardinal)
 	air_update_turf()
 
 
 /obj/effect/hotspot/proc/perform_exposure()
-	var/turf/open/location = loc
+	var/turf/simulated/location = loc
 	if(!istype(location) || !(location.air))
 		return 0
-
-	location.active_hotspot = src
 
 	if(volume > CELL_VOLUME*0.95)
 		bypassing = 1
@@ -89,9 +88,9 @@
 		location.assume_air(affected)
 
 	for(var/A in loc)
-		var/atom/AT = A
-		if(AT && AT != src) // It's possible that the item is deleted in temperature_expose
-			AT.fire_act(temperature, volume)
+		var/atom/item = A
+		if(item && item != src) // It's possible that the item is deleted in temperature_expose
+			item.fire_act(null, temperature, volume)
 	return 0
 
 
@@ -100,7 +99,7 @@
 		just_spawned = 0
 		return 0
 
-	var/turf/open/location = loc
+	var/turf/simulated/location = loc
 	if(!istype(location))
 		qdel(src)
 		return
@@ -118,6 +117,8 @@
 
 	perform_exposure()
 
+	if(location.wet) location.wet = 0
+
 	if(bypassing)
 		icon_state = "3"
 		location.burn_tile()
@@ -125,8 +126,7 @@
 		//Possible spread due to radiated heat
 		if(location.air.temperature > FIRE_MINIMUM_TEMPERATURE_TO_SPREAD)
 			var/radiated_temperature = location.air.temperature*FIRE_SPREAD_RADIOSITY_SCALE
-			for(var/t in location.atmos_adjacent_turfs)
-				var/turf/open/T = t
+			for(var/turf/simulated/T in location.atmos_adjacent_turfs)
 				if(T.active_hotspot)
 					T.hotspot_expose(radiated_temperature, CELL_VOLUME/4)
 
@@ -149,18 +149,19 @@
 /obj/effect/hotspot/Destroy()
 	SetLuminosity(0)
 	SSair.hotspots -= src
-	if(isturf(loc))
-		var/turf/open/T = loc
+	DestroyTurf()
+	if(istype(loc, /turf/simulated))
+		var/turf/simulated/T = loc
 		if(T.active_hotspot == src)
 			T.active_hotspot = null
-	DestroyTurf()
 	loc = null
 	..()
 	return QDEL_HINT_PUTINPOOL
 
 /obj/effect/hotspot/proc/DestroyTurf()
-	if(isturf(loc))
-		var/turf/T = loc
+
+	if(istype(loc, /turf/simulated))
+		var/turf/simulated/T = loc
 		if(T.to_be_destroyed)
 			var/chance_of_deletion
 			if (T.heat_capacity) //beware of division by zero
@@ -176,4 +177,4 @@
 /obj/effect/hotspot/Crossed(mob/living/L)
 	..()
 	if(isliving(L))
-		L.fire_act(temperature, volume)
+		L.fire_act()

@@ -3,14 +3,13 @@
 	icon = 'icons/obj/tank.dmi'
 	item_state = "assembly"
 	throwforce = 5
-	w_class = WEIGHT_CLASS_NORMAL
+	w_class = 3
 	throw_speed = 2
 	throw_range = 4
 	flags = CONDUCT
 	var/status = 0   //0 - not readied //1 - bomb finished with welder
 	var/obj/item/device/assembly_holder/bombassembly = null   //The first part of the bomb is an assembly holder, holding an igniter+some device
 	var/obj/item/weapon/tank/bombtank = null //the second part of the bomb is a plasma tank
-	origin_tech = "materials=1;engineering=1"
 
 /obj/item/device/onetankbomb/examine(mob/user)
 	..()
@@ -20,9 +19,9 @@
 	if(bombtank)
 		icon_state = bombtank.icon_state
 	if(bombassembly)
-		add_overlay(bombassembly.icon_state)
-		add_overlay(bombassembly.overlays)
-		add_overlay("bomb_assembly")
+		overlays += bombassembly.icon_state
+		overlays += bombassembly.overlays
+		overlays += "bomb_assembly"
 
 /obj/item/device/onetankbomb/attackby(obj/item/weapon/W, mob/user, params)
 	if(istype(W, /obj/item/device/analyzer))
@@ -158,7 +157,7 @@
 
 /obj/item/weapon/tank/proc/release()	//This happens when the bomb is not welded. Tank contents are just spat out.
 	var/datum/gas_mixture/removed = air_contents.remove(air_contents.total_moles())
-	var/turf/T = get_turf(src)
+	var/turf/simulated/T = get_turf(src)
 	if(!T)
 		return
 	T.assume_air(removed)

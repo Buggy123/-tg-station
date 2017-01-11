@@ -1,55 +1,24 @@
 /obj/structure/fireaxecabinet
 	name = "fire axe cabinet"
-	desc = "There is a small label that reads \"For Emergency use only\" along with details for safe use of the axe. As if."
+	desc = "There is small label that reads \"For Emergency use only\" along with details for safe use of the axe. As if."
 	var/obj/item/weapon/twohanded/fireaxe/fireaxe = new/obj/item/weapon/twohanded/fireaxe
 	icon = 'icons/obj/wallmounts.dmi'
 	icon_state = "fireaxe"
 	anchored = 1
 	density = 0
-	armor = list(melee = 50, bullet = 20, laser = 0, energy = 100, bomb = 10, bio = 100, rad = 100, fire = 90, acid = 50)
 	var/locked = 1
 	var/open = 0
-	obj_integrity = 150
-	max_integrity = 150
-	integrity_failure = 50
+	var/glass_hp = 60
 
 /obj/structure/fireaxecabinet/New()
 	..()
 	update_icon()
 
-/obj/structure/fireaxecabinet/Destroy()
-	if(fireaxe)
-		qdel(fireaxe)
-		fireaxe = null
-	return ..()
-
 /obj/structure/fireaxecabinet/attackby(obj/item/I, mob/user, params)
-	if(iscyborg(user) || istype(I,/obj/item/device/multitool))
+	if(isrobot(user) || istype(I,/obj/item/device/multitool))
 		toggle_lock(user)
-	else if(istype(I, /obj/item/weapon/weldingtool) && user.a_intent == INTENT_HELP && !broken)
-		var/obj/item/weapon/weldingtool/WT = I
-		if(obj_integrity < max_integrity && WT.remove_fuel(2, user))
-			user << "<span class='notice'>You begin repairing [src].</span>"
-			playsound(loc, WT.usesound, 40, 1)
-			if(do_after(user, 40*I.toolspeed, target = src))
-				obj_integrity = max_integrity
-				playsound(loc, 'sound/items/Welder2.ogg', 50, 1)
-				update_icon()
-				user << "<span class='notice'>You repair [src].</span>"
-		else
-			user << "<span class='warning'>[src] is already in good condition!</span>"
 		return
-	else if(istype(I, /obj/item/stack/sheet/glass) && broken)
-		var/obj/item/stack/sheet/glass/G = I
-		if(G.get_amount() < 2)
-			user << "<span class='warning'>You need two glass sheets to fix [src]!</span>"
-			return
-		user << "<span class='notice'>You start fixing [src]...</span>"
-		if(do_after(user, 20, target = src) && G.use(2))
-			broken = 0
-			obj_integrity = max_integrity
-			update_icon()
-	else if(open || broken)
+	if(open || glass_hp <= 0)
 		if(istype(I, /obj/item/weapon/twohanded/fireaxe) && !fireaxe)
 			var/obj/item/weapon/twohanded/fireaxe/F = I
 			if(F.wielded)
@@ -58,56 +27,54 @@
 			if(!user.drop_item())
 				return
 			fireaxe = F
-			F.forceMove(src)
+			src.contents += F
 			user << "<span class='caution'>You place the [F.name] back in the [name].</span>"
 			update_icon()
 			return
-		else if(!broken)
+		else if(glass_hp > 0)
 			toggle_open()
-	else
-		return ..()
 
-/obj/structure/fireaxecabinet/play_attack_sound(damage_amount, damage_type = BRUTE, damage_flag = 0)
-	switch(damage_type)
-		if(BRUTE)
-			if(broken)
-				playsound(loc, 'sound/effects/hit_on_shattered_glass.ogg', 90, 1)
-			else
-				playsound(loc, 'sound/effects/Glasshit.ogg', 90, 1)
-		if(BURN)
-			playsound(src.loc, 'sound/items/Welder.ogg', 100, 1)
+	else if(istype(I, /obj/item/weapon))
+		user.changeNext_move(CLICK_CD_MELEE)
+		var/obj/item/weapon/W = I
+		user.do_attack_animation(src)
+		playsound(src, 'sound/effects/Glasshit.ogg', 100, 1)
+		if(W.force >= 10)
+			glass_hp -= W.force
+			if(glass_hp <= 0)
+				playsound(src, 'sound/effects/Glassbr3.ogg', 100, 1)
+			update_icon()
+		else
+			user << "<span class='warning'>The [name]'s protective glass glances off the hit.</span>"
 
-/obj/structure/fireaxecabinet/take_damage(damage_amount, damage_type = BRUTE, damage_flag = 0, sound_effect = 1, attack_dir)
-	if(open)
-		return
-	. = ..()
-	if(.)
+/obj/structure/fireaxecabinet/ex_act(severity, target)
+	switch(severity)
+		if(1)
+			qdel(src)
+			return
+		if(2)
+			if(prob(50) && fireaxe)
+				fireaxe.loc = src.loc
+				qdel(src)
+				return
+		if(3)
+			return
+
+/obj/structure/fireaxecabinet/bullet_act(obj/item/projectile/Proj)
+	if((Proj.damage_type == BRUTE || Proj.damage_type == BURN))
+		if(Proj.damage)
+			glass_hp -= Proj.damage
+			if(glass_hp <= 0)
+				playsound(src, 'sound/effects/Glassbr3.ogg', 100, 1)
 		update_icon()
 
-/obj/structure/fireaxecabinet/obj_break(damage_flag)
-	if(!broken && !(flags & NODECONSTRUCT))
-		update_icon()
-		broken = TRUE
-		playsound(src, 'sound/effects/Glassbr3.ogg', 100, 1)
-		new /obj/item/weapon/shard(loc)
-		new /obj/item/weapon/shard(loc)
-
-/obj/structure/fireaxecabinet/deconstruct(disassembled = TRUE)
-	if(!(flags & NODECONSTRUCT))
-		if(fireaxe && loc)
-			fireaxe.forceMove(loc)
-			fireaxe = null
-		new /obj/item/stack/sheet/metal(loc, 2)
-	qdel(src)
-
-/obj/structure/fireaxecabinet/blob_act(obj/structure/blob/B)
+/obj/structure/fireaxecabinet/blob_act()
 	if(fireaxe)
-		fireaxe.forceMove(loc)
-		fireaxe = null
+		fireaxe.loc = src.loc
 	qdel(src)
 
 /obj/structure/fireaxecabinet/attack_hand(mob/user)
-	if(open || broken)
+	if(open || glass_hp <= 0)
 		if(fireaxe)
 			user.put_in_hands(fireaxe)
 			fireaxe = null
@@ -123,37 +90,37 @@
 		update_icon()
 		return
 
-/obj/structure/fireaxecabinet/attack_paw(mob/living/user)
-	attack_hand(user)
+/obj/structure/fireaxecabinet/attack_paw(mob/user)
+	if(ismonkey(user)) //no fire-axe wielding aliens allowed
+		attack_hand(user)
+	return
 
 /obj/structure/fireaxecabinet/attack_ai(mob/user)
 	toggle_lock(user)
 	return
 
 /obj/structure/fireaxecabinet/update_icon()
-	cut_overlays()
+	overlays.Cut()
 	if(fireaxe)
-		add_overlay("axe")
+		overlays += "axe"
 	if(!open)
-		var/hp_percent = obj_integrity/max_integrity * 100
-		if(broken)
-			add_overlay("glass4")
-		else
-			switch(hp_percent)
-				if(-INFINITY to 40)
-					add_overlay("glass3")
-				if(40 to 60)
-					add_overlay("glass2")
-				if(60 to 80)
-					add_overlay("glass1")
-				if(80 to INFINITY)
-					add_overlay("glass")
+		switch(glass_hp)
+			if(-INFINITY to 0)
+				overlays += "glass4"
+			if(1 to 20)
+				overlays += "glass3"
+			if(21 to 40)
+				overlays += "glass2"
+			if(41 to 59)
+				overlays += "glass1"
+			if(60)
+				overlays += "glass"
 		if(locked)
-			add_overlay("locked")
+			overlays += "locked"
 		else
-			add_overlay("unlocked")
+			overlays += "unlocked"
 	else
-		add_overlay("glass_raised")
+		overlays += "glass_raised"
 
 /obj/structure/fireaxecabinet/proc/toggle_lock(mob/user)
 	user << "<span class = 'caution'> Resetting circuitry...</span>"

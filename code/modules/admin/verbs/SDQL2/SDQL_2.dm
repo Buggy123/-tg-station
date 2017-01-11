@@ -75,7 +75,6 @@
 			if(char == "/" || char == "*")
 				for(var/from in from_objs)
 					objs += SDQL_get_all(type, from)
-					CHECK_TICK
 
 			else if(char == "'" || char == "\"")
 				objs += locate(copytext(type, 2, length(type)))
@@ -86,7 +85,6 @@
 			for(var/datum/d in objs_temp)
 				if(SDQL_expression(d, query_tree["where"]))
 					objs += d
-				CHECK_TICK
 
 		switch(query_tree[1])
 			if("call")
@@ -96,12 +94,10 @@
 				for(var/datum/d in objs)
 					for(var/v in call_list)
 						SDQL_callproc(d, v, args_list)
-						CHECK_TICK
 
 			if("delete")
 				for(var/datum/d in objs)
 					qdel(d)
-					CHECK_TICK
 
 			if("select")
 				var/text = ""
@@ -134,7 +130,7 @@
 								vals += v
 								vals[v] = SDQL_expression(d, set_list[v])
 
-						if(isturf(d))
+						if(istype(d, /turf))
 							for(var/v in vals)
 								if(v == "x" || v == "y" || v == "z")
 									continue
@@ -144,7 +140,6 @@
 						else
 							for(var/v in vals)
 								d.vars[v] = vals[v]
-						CHECK_TICK
 
 
 
@@ -246,48 +241,36 @@
 		return out
 
 	type = text2path(type)
-	var/typecache = typecacheof(type)
-	
+
 	if(ispath(type, /mob))
 		for(var/mob/d in location)
-			if(typecache[d.type])
+			if(istype(d, type))
 				out += d
-			CHECK_TICK
 
 	else if(ispath(type, /turf))
 		for(var/turf/d in location)
-			if(typecache[d.type])
+			if(istype(d, type))
 				out += d
-			CHECK_TICK
 
 	else if(ispath(type, /obj))
 		for(var/obj/d in location)
-			if(typecache[d.type])
+			if(istype(d, type))
 				out += d
-			CHECK_TICK
 
 	else if(ispath(type, /area))
 		for(var/area/d in location)
-			if(typecache[d.type])
+			if(istype(d, type))
 				out += d
-			CHECK_TICK
 
 	else if(ispath(type, /atom))
 		for(var/atom/d in location)
-			if(typecache[d.type])
+			if(istype(d, type))
 				out += d
-			CHECK_TICK
-	else if(ispath(type, /datum))
-		if(location == world) //snowflake for byond shortcut
-			for(var/datum/d) //stupid byond trick to have it not return atoms to make this less laggy
-				if(typecache[d.type])
-					out += d
-				CHECK_TICK
-		else
-			for(var/datum/d in location)
-				if(typecache[d.type])
-					out += d
-				CHECK_TICK
+
+	else
+		for(var/datum/d in location)
+			if(istype(d, type))
+				out += d
 
 	return out
 
@@ -310,19 +293,19 @@
 		if(op != "")
 			switch(op)
 				if("+")
-					result = (result + val)
+					result += val
 				if("-")
-					result = (result - val)
+					result -= val
 				if("*")
-					result = (result * val)
+					result *= val
 				if("/")
-					result = (result / val)
+					result /= val
 				if("&")
-					result = (result & val)
+					result &= val
 				if("|")
-					result = (result | val)
+					result |= val
 				if("^")
-					result = (result ^ val)
+					result ^= val
 				if("=", "==")
 					result = (result == val)
 				if("!=", "<>")

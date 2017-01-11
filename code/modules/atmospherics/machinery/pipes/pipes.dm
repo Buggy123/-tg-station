@@ -3,6 +3,7 @@
 	var/volume = 0
 
 	level = 1
+	layer = 2.4 //under wires with their 2.44
 
 	use_power = 0
 	can_unwrench = 1
@@ -14,7 +15,7 @@
 	buckle_lying = -1
 
 /obj/machinery/atmospherics/pipe/New()
-	add_atom_colour(pipe_color, FIXED_COLOUR_PRIORITY)
+	color = pipe_color
 	volume = 35 * device_type
 	..()
 
@@ -38,8 +39,8 @@
 	..()
 
 /obj/machinery/atmospherics/pipe/hide(i)
-	if(level == 1 && isturf(loc))
-		invisibility = i ? INVISIBILITY_MAXIMUM : 0
+	if(level == 1 && istype(loc, /turf/simulated))
+		invisibility = i ? 101 : 0
 	update_icon()
 
 /obj/machinery/atmospherics/pipe/proc/check_pressure(pressure)
@@ -64,8 +65,12 @@
 /obj/machinery/atmospherics/pipe/attackby(obj/item/weapon/W, mob/user, params)
 	if(istype(W, /obj/item/device/analyzer))
 		atmosanalyzer_scan(parent.air, user)
-	else
-		return ..()
+		return
+
+	if(istype(W,/obj/item/device/pipe_painter) || istype(W,/obj/item/weapon/pipe_dispenser))
+		return
+
+	return ..()
 
 /obj/machinery/atmospherics/pipe/returnPipenet()
 	return parent
@@ -86,7 +91,7 @@
 			qdel(meter)
 	. = ..()
 
-	if(parent && !qdeleted(parent))
+	if(parent && !parent.gc_destroyed)
 		qdel(parent)
 	parent = null
 
@@ -98,8 +103,3 @@
 
 /obj/machinery/atmospherics/pipe/returnPipenets()
 	. = list(parent)
-
-/obj/machinery/atmospherics/pipe/run_obj_armor(damage_amount, damage_type, damage_flag = 0, attack_dir)
-	if(damage_flag == "melee" && damage_amount < 12)
-		return 0
-	. = ..()

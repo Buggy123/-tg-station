@@ -1,23 +1,21 @@
 #define CANDLE_LUMINOSITY	2
 /obj/item/candle
 	name = "red candle"
-	desc = "In Greek myth, Prometheus stole fire from the Gods and gave it to \
-		humankind. The jewelry he kept for himself."
+	desc = "a candle"
 	icon = 'icons/obj/candle.dmi'
 	icon_state = "candle1"
 	item_state = "candle1"
-	w_class = WEIGHT_CLASS_TINY
+	w_class = 1
 	var/wax = 200
-	var/lit = FALSE
-	var/infinite = FALSE
-	var/start_lit = FALSE
+	var/lit = 0
+	var/infinite = 0
+	var/start_lit = 0
 	heat = 1000
 
 /obj/item/candle/New()
 	..()
 	if(start_lit)
-		// No visible message
-		light(show_message = FALSE)
+		light()
 
 /obj/item/candle/update_icon()
 	var/i
@@ -31,31 +29,47 @@
 
 /obj/item/candle/attackby(obj/item/weapon/W, mob/user, params)
 	..()
-	var/msg = W.ignition_effect(src, user)
-	if(msg)
-		light(msg)
+	if(istype(W, /obj/item/weapon/weldingtool))
+		var/obj/item/weapon/weldingtool/WT = W
+		if(WT.isOn()) //Badasses dont get blinded by lighting their candle with a welding tool
+			light("<span class='danger'>[user] casually lights the [name] with [W], what a badass.</span>")
+	else if(istype(W, /obj/item/weapon/lighter))
+		var/obj/item/weapon/lighter/L = W
+		if(L.lit)
+			light()
+	else if(istype(W, /obj/item/weapon/match))
+		var/obj/item/weapon/match/M = W
+		if(M.lit)
+			light()
+	else if(istype(W, /obj/item/candle))
+		var/obj/item/candle/C = W
+		if(C.lit)
+			light()
+	else if(istype(W, /obj/item/clothing/mask/cigarette))
+		var/obj/item/clothing/mask/cigarette/M = W
+		if(M.lit)
+			light()
 
-/obj/item/candle/fire_act(exposed_temperature, exposed_volume)
+/obj/item/candle/fire_act()
 	if(!src.lit)
 		light() //honk
-	..()
+	return
 
-/obj/item/candle/proc/light(show_message)
+/obj/item/candle/proc/light(var/flavor_text = "<span class='danger'>[usr] lights the [name].</span>")
 	if(!src.lit)
-		src.lit = TRUE
+		src.lit = 1
 		//src.damtype = "fire"
-		if(show_message)
-			usr.visible_message(show_message)
+		usr.visible_message(flavor_text)
 		SetLuminosity(CANDLE_LUMINOSITY)
-		START_PROCESSING(SSobj, src)
+		if(!infinite)
+			SSobj.processing |= src
 		update_icon()
 
 
 /obj/item/candle/process()
 	if(!lit)
 		return
-	if(!infinite)
-		wax--
+	wax--
 	if(!wax)
 		new/obj/item/trash/candle(src.loc)
 		if(istype(src.loc, /mob))
@@ -63,13 +77,14 @@
 			M.unEquip(src, 1) //src is being deleted anyway
 		qdel(src)
 	update_icon()
-	open_flame()
+	if(istype(loc, /turf)) //start a fire if possible
+		var/turf/T = loc
+		T.hotspot_expose(700, 5)
+
 
 /obj/item/candle/attack_self(mob/user)
 	if(lit)
-		user.visible_message(
-			"<span class='notice'>[user] snuffs [src].</span>")
-		lit = FALSE
+		lit = 0
 		update_icon()
 		SetLuminosity(0)
 		user.AddLuminosity(-CANDLE_LUMINOSITY)
@@ -93,7 +108,7 @@
 
 
 /obj/item/candle/infinite
-	infinite = TRUE
-	start_lit = TRUE
+	infinite = 1
+	start_lit = 1
 
 #undef CANDLE_LUMINOSITY

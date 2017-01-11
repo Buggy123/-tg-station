@@ -27,12 +27,12 @@
 		connected_device.disconnect()
 	return ..()
 
-/obj/machinery/atmospherics/components/unary/portables_connector/can_unwrench(mob/user)
-	if(..())
+/obj/machinery/atmospherics/components/unary/portables_connector/attackby(obj/item/weapon/W, mob/user, params)
+	if(istype(W, /obj/item/weapon/wrench))
 		if(connected_device)
-			user << "<span class='warning'>You cannot unwrench this [src], detach [connected_device] first!</span>"
-		else
+			user << "<span class='warning'>You cannot unwrench this [src], dettach [connected_device] first!</span>"
 			return 1
+	return ..()
 
 /obj/machinery/atmospherics/components/unary/portables_connector/portableConnectorReturnAir()
 	return connected_device.portableConnectorReturnAir()

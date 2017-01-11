@@ -57,9 +57,6 @@ var/list/obj/machinery/requests_console/allConsoles = list()
 	var/obj/item/device/radio/Radio
 	var/emergency //If an emergency has been called by this device. Acts as both a cooldown and lets the responder know where it the emergency was triggered from
 	luminosity = 0
-	obj_integrity = 300
-	max_integrity = 300
-	armor = list(melee = 70, bullet = 30, laser = 30, energy = 30, bomb = 0, bio = 0, rad = 0, fire = 90, acid = 90)
 
 /obj/machinery/requests_console/power_change()
 	..()
@@ -67,7 +64,7 @@ var/list/obj/machinery/requests_console/allConsoles = list()
 
 /obj/machinery/requests_console/update_icon()
 	if(open)
-		if(!hackState)
+		if(hackState == 0)
 			icon_state="req_comp_open"
 		else
 			icon_state="req_comp_rewired"
@@ -138,7 +135,7 @@ var/list/obj/machinery/requests_console/allConsoles = list()
 						dat += "<tr>"
 						dat += "<td width='55%'>[dpt]</td>"
 						dat += "<td width='45%'><A href='?src=\ref[src];write=[ckey(dpt)]'>Normal</A> <A href='?src=\ref[src];write=[ckey(dpt)];priority=2'>High</A>"
-						if(hackState)
+						if (hackState == 1)
 							dat += "<A href='?src=\ref[src];write=[ckey(dpt)];priority=3'>EXTREME</A>"
 						dat += "</td>"
 						dat += "</tr>"
@@ -153,7 +150,7 @@ var/list/obj/machinery/requests_console/allConsoles = list()
 						dat += "<tr>"
 						dat += "<td width='55%'>[dpt]</td>"
 						dat += "<td width='45%'><A href='?src=\ref[src];write=[ckey(dpt)]'>Normal</A> <A href='?src=\ref[src];write=[ckey(dpt)];priority=2'>High</A>"
-						if(hackState)
+						if (hackState == 1)
 							dat += "<A href='?src=\ref[src];write=[ckey(dpt)];priority=3'>EXTREME</A>"
 						dat += "</td>"
 						dat += "</tr>"
@@ -168,7 +165,7 @@ var/list/obj/machinery/requests_console/allConsoles = list()
 						dat += "<tr>"
 						dat += "<td width='55%'>[dpt]</td>"
 						dat += "<td width='45%'><A href='?src=\ref[src];write=[ckey(dpt)]'>Normal</A> <A href='?src=\ref[src];write=[ckey(dpt)];priority=2'>High</A>"
-						if(hackState)
+						if (hackState == 1)
 							dat += "<A href='?src=\ref[src];write=[ckey(dpt)];priority=3'>EXTREME</A>"
 						dat += "</td>"
 						dat += "</tr>"
@@ -248,6 +245,9 @@ var/list/obj/machinery/requests_console/allConsoles = list()
 					dat += "Speaker <A href='?src=\ref[src];setSilent=0'>OFF</A>"
 				else
 					dat += "Speaker <A href='?src=\ref[src];setSilent=1'>ON</A>"
+
+		//user << browse("[dat]", "window=request_console")
+		//onclose(user, "req_console")
 		var/datum/browser/popup = new(user, "req_console", "[department] Requests Console", 450, 440)
 		popup.set_content(dat)
 		popup.set_title_image(user.browse_rsc_icon(src.icon, src.icon_state))
@@ -479,29 +479,34 @@ var/list/obj/machinery/requests_console/allConsoles = list()
 	SetLuminosity(2)
 
 /obj/machinery/requests_console/attackby(obj/item/weapon/O, mob/user, params)
-	if(istype(O, /obj/item/weapon/crowbar))
+	if (istype(O, /obj/item/weapon/crowbar))
 		if(open)
 			user << "<span class='notice'>You close the maintenance panel.</span>"
 			open = 0
+			icon_state="req_comp0"
 		else
 			user << "<span class='notice'>You open the maintenance panel.</span>"
 			open = 1
-		update_icon()
-		return
-	if(istype(O, /obj/item/weapon/screwdriver))
+			if(hackState == 0)
+				icon_state="req_comp_open"
+			else if(hackState == 1)
+				icon_state="req_comp_rewired"
+	if (istype(O, /obj/item/weapon/screwdriver))
 		if(open)
-			hackState = !hackState
-			if(hackState)
+			if(hackState == 0)
 				user << "<span class='notice'>You modify the wiring.</span>"
-			else
+				hackState = 1
+				icon_state="req_comp_rewired"
+			else if(hackState == 1)
 				user << "<span class='notice'>You reset the wiring.</span>"
-			update_icon()
+				hackState = 0
+				icon_state="req_comp_open"
 		else
-			user << "<span class='warning'>You must open the maintenance panel first!</span>"
-		return
+			user << "<span class='warning'>You can't do much with that!</span>"
+	update_icon()
 
 	var/obj/item/weapon/card/id/ID = O.GetID()
-	if(ID)
+	if (ID)
 		if(screen == 9)
 			msgVerified = "<font color='green'><b>Verified by [ID.registered_name] ([ID.assignment])</b></font>"
 			updateUsrDialog()
@@ -512,11 +517,9 @@ var/list/obj/machinery/requests_console/allConsoles = list()
 				announceAuth = 0
 				user << "<span class='warning'>You are not authorized to send announcements!</span>"
 			updateUsrDialog()
-		return
 	if (istype(O, /obj/item/weapon/stamp))
 		if(screen == 9)
 			var/obj/item/weapon/stamp/T = O
 			msgStamped = "<span class='boldnotice'>Stamped with the [T.name]</span>"
 			updateUsrDialog()
-		return
-	return ..()
+	return

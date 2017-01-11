@@ -17,36 +17,6 @@
 			user << "<span class='info'>Not enough fuel to smelt [src].</span>"
 	..()
 
-/obj/item/weapon/ore/Crossed(atom/movable/AM)
-	var/obj/item/weapon/storage/bag/ore/OB
-	if(istype(loc, /turf/open/floor/plating/asteroid))
-		var/turf/open/floor/plating/asteroid/F = loc
-		if(ishuman(AM))
-			var/mob/living/carbon/human/H = AM
-			for(var/thing in H.get_storage_slots())
-				if(istype(thing, /obj/item/weapon/storage/bag/ore))
-					OB = thing
-					break
-			for(var/thing in H.held_items)
-				if(istype(thing, /obj/item/weapon/storage/bag/ore))
-					OB = thing
-					break
-		else if(issilicon(AM))
-			var/mob/living/silicon/robot/R = AM
-			for(var/thing in R.module_active)
-				if(istype(thing, /obj/item/weapon/storage/bag/ore))
-					OB = thing
-					break
-		if(OB)
-			F.attackby(OB, AM)
-			// Then, if the user is dragging an ore box, empty the satchel
-			// into the box.
-			var/mob/living/L = AM
-			if(istype(L.pulling, /obj/structure/ore_box))
-				var/obj/structure/ore_box/box = L.pulling
-				box.attackby(OB, AM)
-	return ..()
-
 /obj/item/weapon/ore/uranium
 	name = "uranium ore"
 	icon_state = "Uranium ore"
@@ -70,7 +40,6 @@
 	points = 1
 	materials = list(MAT_GLASS=MINERAL_MATERIAL_AMOUNT)
 	refined_type = /obj/item/stack/sheet/glass
-	w_class = WEIGHT_CLASS_TINY
 
 /obj/item/weapon/ore/glass/attack_self(mob/living/user)
 	user << "<span class='notice'>You use the sand to make sandstone.</span>"
@@ -90,29 +59,6 @@
 		sandAmt -= SS.max_amount
 	qdel(src)
 	return
-
-/obj/item/weapon/ore/glass/throw_impact(atom/hit_atom)
-	if(..() || !ishuman(hit_atom))
-		return
-	var/mob/living/carbon/human/C = hit_atom
-	if(C.head && C.head.flags_cover & HEADCOVERSEYES)
-		visible_message("<span class='danger'>[C]'s headgear blocks the sand!</span>")
-		return
-	if(C.wear_mask && C.wear_mask.flags_cover & MASKCOVERSEYES)
-		visible_message("<span class='danger'>[C]'s mask blocks the sand!</span>")
-		return
-	if(C.glasses && C.glasses.flags_cover & GLASSESCOVERSEYES)
-		visible_message("<span class='danger'>[C]'s glasses block the sand!</span>")
-		return
-	C.adjust_blurriness(6)
-	C.adjustStaminaLoss(15)//the pain from your eyes burning does stamina damage
-	C.confused += 5
-	C << "<span class='userdanger'>\The [src] gets into your eyes! The pain, it burns!</span>"
-	qdel(src)
-
-/obj/item/weapon/ore/glass/basalt
-	name = "volcanic ash"
-	icon_state = "volcanic_sand"
 
 /obj/item/weapon/ore/plasma
 	name = "plasma ore"
@@ -163,14 +109,6 @@
 	materials = list(MAT_BANANIUM=MINERAL_MATERIAL_AMOUNT)
 	refined_type = /obj/item/stack/sheet/mineral/bananium
 
-/obj/item/weapon/ore/titanium
-	name = "titanium ore"
-	icon_state = "Titanium ore"
-	origin_tech = "materials=4"
-	points = 50
-	materials = list(MAT_TITANIUM=MINERAL_MATERIAL_AMOUNT)
-	refined_type = /obj/item/stack/sheet/mineral/titanium
-
 /obj/item/weapon/ore/slag
 	name = "slag"
 	desc = "Completely useless"
@@ -182,7 +120,7 @@
 	icon = 'icons/obj/mining.dmi'
 	icon_state = "Gibtonite ore"
 	item_state = "Gibtonite ore"
-	w_class = WEIGHT_CLASS_BULKY
+	w_class = 4
 	throw_range = 0
 	var/primed = 0
 	var/det_time = 100
@@ -200,7 +138,7 @@
 		wires = new /datum/wires/explosive/gibtonite(src)
 		attacher = key_name(user)
 		qdel(I)
-		add_overlay("Gibtonite_igniter")
+		overlays += "Gibtonite_igniter"
 		return
 
 	if(wires && !primed)
@@ -271,7 +209,6 @@
 			qdel(src)
 
 /obj/item/weapon/ore/New()
-	..()
 	pixel_x = rand(0,16)-8
 	pixel_y = rand(0,8)-8
 
@@ -280,9 +217,6 @@
 
 /*****************************Coin********************************/
 
-// The coin's value is a value of it's materials.
-// Yes, the gold standard makes a come-back!
-// This is the only way to make coins that are possible to produce on station actually worth anything.
 /obj/item/weapon/coin
 	icon = 'icons/obj/economy.dmi'
 	name = "coin"
@@ -290,15 +224,14 @@
 	flags = CONDUCT
 	force = 1
 	throwforce = 2
-	w_class = WEIGHT_CLASS_TINY
+	w_class = 1
 	var/string_attached
 	var/list/sideslist = list("heads","tails")
 	var/cmineral = null
 	var/cooldown = 0
-	var/value = 1
+	var/value = 10
 
 /obj/item/weapon/coin/New()
-	..()
 	pixel_x = rand(0,16)-8
 	pixel_y = rand(0,8)-8
 
@@ -306,70 +239,64 @@
 	if(cmineral)
 		name = "[cmineral] coin"
 
-/obj/item/weapon/coin/examine(mob/user)
-	..()
-	if(value)
-		user << "<span class='info'>It's worth [value] credit\s.</span>"
-
 /obj/item/weapon/coin/gold
 	cmineral = "gold"
 	icon_state = "coin_gold_heads"
-	value = 50
-	materials = list(MAT_GOLD = MINERAL_MATERIAL_AMOUNT*0.2)
+	value = 160
+	materials = list(MAT_GOLD = 400)
 
 /obj/item/weapon/coin/silver
 	cmineral = "silver"
 	icon_state = "coin_silver_heads"
-	value = 20
-	materials = list(MAT_SILVER = MINERAL_MATERIAL_AMOUNT*0.2)
+	value = 40
+	materials = list(MAT_SILVER = 400)
 
 /obj/item/weapon/coin/diamond
 	cmineral = "diamond"
 	icon_state = "coin_diamond_heads"
-	value = 500
-	materials = list(MAT_DIAMOND = MINERAL_MATERIAL_AMOUNT*0.2)
+	value = 120
+	materials = list(MAT_DIAMOND = 400)
 
 /obj/item/weapon/coin/iron
 	cmineral = "iron"
 	icon_state = "coin_iron_heads"
-	value = 1
-	materials = list(MAT_METAL = MINERAL_MATERIAL_AMOUNT*0.2)
+	value = 20
+	materials = list(MAT_METAL = 400)
 
 /obj/item/weapon/coin/plasma
 	cmineral = "plasma"
 	icon_state = "coin_plasma_heads"
-	value = 100
-	materials = list(MAT_PLASMA = MINERAL_MATERIAL_AMOUNT*0.2)
+	value = 80
+	materials = list(MAT_PLASMA = 400)
 
 /obj/item/weapon/coin/uranium
 	cmineral = "uranium"
 	icon_state = "coin_uranium_heads"
-	value = 80
-	materials = list(MAT_URANIUM = MINERAL_MATERIAL_AMOUNT*0.2)
+	value = 160
+	materials = list(MAT_URANIUM = 400)
 
 /obj/item/weapon/coin/clown
 	cmineral = "bananium"
 	icon_state = "coin_bananium_heads"
-	value = 1000 //makes the clown cry
-	materials = list(MAT_BANANIUM = MINERAL_MATERIAL_AMOUNT*0.2)
+	value = 600 //makes the clown cri
+	materials = list(MAT_BANANIUM = 400)
 
 /obj/item/weapon/coin/adamantine
 	cmineral = "adamantine"
 	icon_state = "coin_adamantine_heads"
-	value = 1500
+	value = 400
 
 /obj/item/weapon/coin/mythril
 	cmineral = "mythril"
 	icon_state = "coin_mythril_heads"
-	value = 3000
+	value = 400
 
 /obj/item/weapon/coin/twoheaded
 	cmineral = "iron"
 	icon_state = "coin_iron_heads"
 	desc = "Hey, this coin's the same on both sides!"
 	sideslist = list("heads")
-	materials = list(MAT_METAL = MINERAL_MATERIAL_AMOUNT*0.2)
-	value = 1
+	value = 20
 
 /obj/item/weapon/coin/antagtoken
 	name = "antag token"
@@ -377,7 +304,7 @@
 	cmineral = "valid"
 	desc = "A novelty coin that helps the heart know what hard evidence cannot prove."
 	sideslist = list("valid", "salad")
-	value = 0
+	value = 20
 
 /obj/item/weapon/coin/antagtoken/New()
 	return
@@ -390,7 +317,7 @@
 			return
 
 		if (CC.use(1))
-			add_overlay(image('icons/obj/economy.dmi',"coin_string_overlay"))
+			overlays += image('icons/obj/economy.dmi',"coin_string_overlay")
 			string_attached = 1
 			user << "<span class='notice'>You attach a string to the coin.</span>"
 		else

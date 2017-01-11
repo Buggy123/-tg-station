@@ -15,12 +15,6 @@
 	if(prob(MANIFEST_ERROR_CHANCE))
 		errors |= MANIFEST_ERROR_ITEM
 
-/obj/item/weapon/paper/manifest/proc/is_approved()
-	return stamped && stamped.len && !is_denied()
-
-/obj/item/weapon/paper/manifest/proc/is_denied()
-	return stamped && ("stamp-deny" in stamped)
-
 /datum/supply_order
 	var/id
 	var/orderer

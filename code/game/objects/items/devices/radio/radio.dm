@@ -4,7 +4,6 @@
 	suffix = "\[3\]"
 	icon_state = "walkietalkie"
 	item_state = "walkietalkie"
-	dog_fashion = /datum/dog_fashion/back
 	var/on = 1 // 0 for off
 	var/last_transmission
 	var/frequency = 1459 //common chat
@@ -30,11 +29,10 @@
 //			"Example" = FREQ_LISTENING|FREQ_BROADCASTING
 	flags = CONDUCT | HEAR
 	slot_flags = SLOT_BELT
-	languages_spoken = HUMAN | ROBOT
-	languages_understood = HUMAN | ROBOT
+	languages = HUMAN | ROBOT
 	throw_speed = 3
 	throw_range = 7
-	w_class = WEIGHT_CLASS_SMALL
+	w_class = 2
 	materials = list(MAT_METAL=75, MAT_GLASS=25)
 
 	var/const/TRANSMISSION_DELAY = 5 // only 2/second/radio
@@ -110,7 +108,7 @@
 /obj/item/device/radio/interact(mob/user)
 	if (..())
 		return
-	if(b_stat && !isAI(user))
+	if(b_stat && !istype(user, /mob/living/silicon/ai))
 		wires.interact(user)
 	else
 		ui_interact(user)
@@ -197,10 +195,6 @@
 				. = TRUE
 
 /obj/item/device/radio/talk_into(atom/movable/M, message, channel, list/spans)
-	addtimer(CALLBACK(src, .proc/talk_into_impl, M, message, channel, spans), 0)
-	return ITALICS | REDUCE_RANGE
-
-/obj/item/device/radio/proc/talk_into_impl(atom/movable/M, message, channel, list/spans)
 	if(!on) return // the device has to be on
 	//  Fix for permacell radios, but kinda eh about actually fixing them.
 	if(!M || !message) return
@@ -281,7 +275,7 @@
 		jobname = "AI"
 
 	// --- Cyborg ---
-	else if(iscyborg(M))
+	else if(isrobot(M))
 		var/mob/living/silicon/robot/B = M
 		jobname = "[B.designation] Cyborg"
 
@@ -320,7 +314,7 @@
 			"server" = null,
 			"reject" = 0,
 			"level" = 0,
-			"languages" = languages_spoken,
+			"languages" = languages,
 			"spans" = spans,
 			"verb_say" = M.verb_say,
 			"verb_ask" = M.verb_ask,
@@ -365,7 +359,7 @@
 			"server" = null, // the last server to log this signal
 			"reject" = 0,	// if nonzero, the signal will not be accepted by any broadcasting machinery
 			"level" = position.z, // The source's z level
-			"languages" = M.languages_spoken, //The languages M is talking in.
+			"languages" = M.languages, //The languages M is talking in.
 			"spans" = spans, //the span classes of this message.
 			"verb_say" = M.verb_say, //the verb used when talking normally
 			"verb_ask" = M.verb_ask, //the verb used when asking
@@ -415,7 +409,7 @@
 		"server" = null,
 		"reject" = 0,
 		"level" = position.z,
-		"languages" = languages_spoken,
+		"languages" = languages,
 		"spans" = spans,
 		"verb_say" = M.verb_say,
 		"verb_ask" = M.verb_ask,
@@ -510,15 +504,14 @@
 		user << "<span class='notice'>[name] can not be modified or attached.</span>"
 
 /obj/item/device/radio/attackby(obj/item/weapon/W, mob/user, params)
-	add_fingerprint(user)
+	..()
 	if(istype(W, /obj/item/weapon/screwdriver))
 		b_stat = !b_stat
 		if(b_stat)
 			user << "<span class='notice'>The radio can now be attached and modified!</span>"
 		else
 			user << "<span class='notice'>The radio can no longer be modified or attached!</span>"
-	else
-		return ..()
+	add_fingerprint(user)
 
 /obj/item/device/radio/emp_act(severity)
 	emped++ //There's been an EMP; better count it
@@ -545,7 +538,6 @@
 /obj/item/device/radio/borg
 	name = "cyborg radio"
 	subspace_switchable = 1
-	dog_fashion = null
 
 /obj/item/device/radio/borg/syndicate
 	syndie = 1
@@ -556,6 +548,8 @@
 	set_frequency(SYND_FREQ)
 
 /obj/item/device/radio/borg/attackby(obj/item/weapon/W, mob/user, params)
+	if (!( istype(W, /obj/item/weapon/screwdriver) || (istype(W, /obj/item/device/encryptionkey/ ))))
+		return
 
 	if(istype(W, /obj/item/weapon/screwdriver))
 		if(keyslot)
@@ -576,7 +570,7 @@
 		else
 			user << "<span class='warning'>This radio doesn't have any encryption keys!</span>"
 
-	else if(istype(W, /obj/item/device/encryptionkey/))
+	if(istype(W, /obj/item/device/encryptionkey/))
 		if(keyslot)
 			user << "<span class='warning'>The radio can't hold another key!</span>"
 			return
@@ -589,7 +583,7 @@
 
 		recalculateChannels()
 
+	return
 
 /obj/item/device/radio/off	// Station bounced radios, their only difference is spawning with the speakers off, this was made to help the lag.
 	listening = 0			// And it's nice to have a subtype too for future features.
-	dog_fashion = /datum/dog_fashion/back

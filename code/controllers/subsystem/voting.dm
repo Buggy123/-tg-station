@@ -2,9 +2,9 @@ var/datum/subsystem/vote/SSvote
 
 /datum/subsystem/vote
 	name = "Vote"
+	can_fire = 1
 	wait = 10
-
-	flags = SS_FIRE_IN_LOBBY|SS_KEEP_TIMING|SS_NO_INIT
+	priority = -1
 
 	var/initiator = null
 	var/started_time = null
@@ -14,7 +14,6 @@ var/datum/subsystem/vote/SSvote
 	var/list/choices = list()
 	var/list/voted = list()
 	var/list/voting = list()
-	var/list/generated_actions = list()
 
 /datum/subsystem/vote/New()
 	NEW_SS_GLOBAL(SSvote)
@@ -45,7 +44,6 @@ var/datum/subsystem/vote/SSvote
 	choices.Cut()
 	voted.Cut()
 	voting.Cut()
-	remove_action_buttons()
 
 /datum/subsystem/vote/proc/get_result()
 	//get the highest number of votes
@@ -58,20 +56,15 @@ var/datum/subsystem/vote/SSvote
 			greatest_votes = votes
 	//default-vote for everyone who didn't vote
 	if(!config.vote_no_default && choices.len)
-		var/list/non_voters = directory.Copy()
-		non_voters -= voted
-		for (var/non_voter_ckey in non_voters)
-			var/client/C = non_voters[non_voter_ckey]
-			if (!C || C.is_afk())
-				non_voters -= non_voter_ckey
-		if(non_voters.len > 0)
+		var/non_voters = (clients.len - total_votes)
+		if(non_voters > 0)
 			if(mode == "restart")
-				choices["Continue Playing"] += non_voters.len
+				choices["Continue Playing"] += non_voters
 				if(choices["Continue Playing"] >= greatest_votes)
 					greatest_votes = choices["Continue Playing"]
 			else if(mode == "gamemode")
 				if(master_mode in choices)
-					choices[master_mode] += non_voters.len
+					choices[master_mode] += non_voters
 					if(choices[master_mode] >= greatest_votes)
 						greatest_votes = choices[master_mode]
 	//get all options with that many votes and return them in a list
@@ -107,7 +100,6 @@ var/datum/subsystem/vote/SSvote
 	else
 		text += "<b>Vote Result: Inconclusive - No Votes!</b>"
 	log_vote(text)
-	remove_action_buttons()
 	world << "\n<font color='purple'>[text]</font>"
 	return .
 
@@ -153,19 +145,9 @@ var/datum/subsystem/vote/SSvote
 
 /datum/subsystem/vote/proc/initiate_vote(vote_type, initiator_key)
 	if(!mode)
-		if(started_time)
+		if(started_time != null)
 			var/next_allowed_time = (started_time + config.vote_delay)
-			if(mode)
-				usr << "<span class='warning'>There is already a vote in progress! please wait for it to finish.</span>"
-				return 0
-
-			var/admin = FALSE
-			var/ckey = ckey(initiator_key)
-			if((admin_datums[ckey]) || (ckey in deadmins))
-				admin = TRUE
-
-			if(next_allowed_time > world.time && !admin)
-				usr << "<span class='warning'>A vote was initiated recently, you must wait roughly [(next_allowed_time-world.time)/10] seconds before a new vote can be started!</span>"
+			if(next_allowed_time > world.time)
 				return 0
 
 		reset()
@@ -194,13 +176,6 @@ var/datum/subsystem/vote/SSvote
 		log_vote(text)
 		world << "\n<font color='purple'><b>[text]</b>\nType <b>vote</b> or click <a href='?src=\ref[src]'>here</a> to place your votes.\nYou have [config.vote_period/10] seconds to vote.</font>"
 		time_remaining = round(config.vote_period/10)
-		for(var/c in clients)
-			var/client/C = c
-			var/datum/action/vote/V = new
-			if(question)
-				V.name = "Vote: [question]"
-			V.Grant(C.mob)
-			generated_actions += V
 		return 1
 	return 0
 
@@ -286,12 +261,6 @@ var/datum/subsystem/vote/SSvote
 			submit_vote(round(text2num(href_list["vote"])))
 	usr.vote()
 
-/datum/subsystem/vote/proc/remove_action_buttons()
-	for(var/v in generated_actions)
-		var/datum/action/vote/V = v
-		if(!qdeleted(V))
-			V.Remove(V.owner)
-	generated_actions = list()
 
 /mob/verb/vote()
 	set category = "OOC"
@@ -302,14 +271,3 @@ var/datum/subsystem/vote/SSvote
 	popup.set_content(SSvote.interface(client))
 	popup.open(0)
 
-/datum/action/vote
-	name = "Vote!"
-	button_icon_state = "vote"
-
-/datum/action/vote/Trigger()
-	if(owner)
-		owner.vote()
-		Remove(owner)
-
-/datum/action/vote/IsAvailable()
-	return 1

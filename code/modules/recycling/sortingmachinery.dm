@@ -1,12 +1,13 @@
 /obj/structure/bigDelivery
 	name = "large parcel"
-	desc = "A large delivery parcel."
+	desc = "A big wrapped package."
 	icon = 'icons/obj/storage.dmi'
 	icon_state = "deliverycloset"
 	density = 1
 	mouse_drag_pointer = MOUSE_ACTIVE_POINTER
 	var/giftwrapped = 0
 	var/sortTag = 0
+
 
 /obj/structure/bigDelivery/attack_hand(mob/user)
 	playsound(src.loc, 'sound/items/poster_ripped.ogg', 50, 1)
@@ -15,12 +16,8 @@
 /obj/structure/bigDelivery/Destroy()
 	var/turf/T = get_turf(src)
 	for(var/atom/movable/AM in contents)
-		AM.forceMove(T)
+		AM.loc = T
 	return ..()
-
-/obj/structure/bigDelivery/contents_explosion(severity, target)
-	for(var/atom/movable/AM in contents)
-		AM.ex_act()
 
 /obj/structure/bigDelivery/attackby(obj/item/W, mob/user, params)
 	if(istype(W, /obj/item/device/destTagger))
@@ -48,8 +45,6 @@
 			icon_state = "gift[icon_state]"
 		else
 			user << "<span class='warning'>You need more paper!</span>"
-	else
-		return ..()
 
 /obj/structure/bigDelivery/relay_container_resist(mob/living/user, obj/O)
 	if(istype(loc, /atom/movable))
@@ -58,7 +53,7 @@
 		return
 	user << "<span class='notice'>You lean on the back of [O] and start pushing to rip the wrapping around it.</span>"
 	if(do_after(user, 50, target = O))
-		if(!user || user.stat != CONSCIOUS || user.loc != O || O.loc != src )
+		if(!user || user.stat != CONSCIOUS || user.loc != src || O.loc != src )
 			return
 		user << "<span class='notice'>You successfully removed [O]'s wrapping !</span>"
 		O.loc = loc
@@ -69,37 +64,21 @@
 			user << "<span class='warning'>You fail to remove [O]'s wrapping!</span>"
 
 
+
 /obj/item/smallDelivery
-	name = "parcel"
-	desc = "A brown paper delivery parcel."
+	name = "small parcel"
+	desc = "A small wrapped package."
 	icon = 'icons/obj/storage.dmi'
 	icon_state = "deliverypackage3"
 	var/giftwrapped = 0
 	var/sortTag = 0
 
-/obj/item/smallDelivery/contents_explosion(severity, target)
-	for(var/atom/movable/AM in contents)
-		AM.ex_act()
 
 /obj/item/smallDelivery/attack_self(mob/user)
 	user.unEquip(src)
 	for(var/X in contents)
 		var/atom/movable/AM = X
 		user.put_in_hands(AM)
-	playsound(src.loc, 'sound/items/poster_ripped.ogg', 50, 1)
-	qdel(src)
-
-/obj/item/smallDelivery/attack_self_tk(mob/user)
-	if(ismob(loc))
-		var/mob/M = loc
-		M.unEquip(src)
-		for(var/X in contents)
-			var/atom/movable/AM = X
-			M.put_in_hands(AM)
-	else
-		for(var/X in contents)
-			var/atom/movable/AM = X
-			AM.forceMove(src.loc)
 	playsound(src.loc, 'sound/items/poster_ripped.ogg', 50, 1)
 	qdel(src)
 
@@ -142,7 +121,7 @@
 	//If you don't want to fuck up disposals, add to this list, and don't change the order.
 	//If you insist on changing the order, you'll have to change every sort junction to reflect the new order. --Pete
 
-	w_class = WEIGHT_CLASS_TINY
+	w_class = 1
 	item_state = "electronic"
 	flags = CONDUCT
 	slot_flags = SLOT_BELT

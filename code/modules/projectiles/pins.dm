@@ -4,9 +4,8 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "firing_pin"
 	item_state = "pen"
-	origin_tech = "materials=2;combat=4"
 	flags = CONDUCT
-	w_class = WEIGHT_CLASS_TINY
+	w_class = 1
 	attack_verb = list("poked")
 	var/emagged = 0
 	var/fail_message = "<span class='warning'>INVALID USER.</span>"
@@ -79,7 +78,6 @@
 	desc = "This safety firing pin allows weapons to be fired within proximity to a firing range."
 	fail_message = "<span class='warning'>TEST RANGE CHECK FAILED.</span>"
 	pin_removeable = 1
-	origin_tech = "combat=2;materials=2"
 
 /obj/item/device/firing_pin/test_range/pin_auth(mob/living/user)
 	for(var/obj/machinery/magnetic_controller/M in range(user, 3))
@@ -95,18 +93,16 @@
 	var/obj/item/weapon/implant/req_implant = null
 
 /obj/item/device/firing_pin/implant/pin_auth(mob/living/user)
-	if(iscarbon(user))
-		var/mob/living/carbon/C = user
-		for(var/obj/item/weapon/implant/I in C.implants)
-			if(req_implant && I.type == req_implant)
-				return 1
+	for(var/obj/item/weapon/implant/I in user)
+		if(req_implant &&  I.imp_in == user && I.type == req_implant)
+			return 1
 	return 0
 
-/obj/item/device/firing_pin/implant/mindshield
-	name = "mindshield firing pin"
-	desc = "This Security firing pin authorizes the weapon for only mindshield-implanted users."
+/obj/item/device/firing_pin/implant/loyalty
+	name = "loyalty firing pin"
+	desc = "This Security firing pin authorizes the weapon for only loyalty-implanted users."
 	icon_state = "firing_pin_loyalty"
-	req_implant = /obj/item/weapon/implant/mindshield
+	req_implant = /obj/item/weapon/implant/loyalty
 
 /obj/item/device/firing_pin/implant/pindicate
 	name = "syndicate firing pin"
@@ -120,7 +116,7 @@
 /obj/item/device/firing_pin/clown
 	name = "hilarious firing pin"
 	desc = "Advanced clowntech that can convert any firearm into a far more useful object."
-	color = "#FFFF00"
+	color = "yellow"
 	fail_message = "<span class='warning'>HONK!</span>"
 	force_replace = 1
 
@@ -214,6 +210,7 @@
 	icon_state = "firing_pin_blue"
 	suit_requirement = /obj/item/clothing/suit/bluetag
 	tagcolor = "blue"
+
 
 /obj/item/device/firing_pin/Destroy()
 	if(gun)

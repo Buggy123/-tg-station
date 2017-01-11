@@ -2,21 +2,17 @@ var/datum/subsystem/timer/SStimer
 
 /datum/subsystem/timer
 	name = "Timer"
-	wait = 2 //SS_TICKER subsystem, so wait is in ticks
-	init_order = 1
-	display_order = 3
-	can_fire = 0 //start disabled
-	flags = SS_FIRE_IN_LOBBY|SS_TICKER|SS_POST_FIRE_TIMING|SS_NO_INIT
+	wait = 5
+	priority = 1
+	display = 3
 
 	var/list/datum/timedevent/processing
 	var/list/hashes
 
-
 /datum/subsystem/timer/New()
+	NEW_SS_GLOBAL(SStimer)
 	processing = list()
 	hashes = list()
-	NEW_SS_GLOBAL(SStimer)
-
 
 /datum/subsystem/timer/stat_entry(msg)
 	..("P:[processing.len]")
@@ -26,60 +22,58 @@ var/datum/subsystem/timer/SStimer
 		can_fire = 0 //nothing to do, lets stop firing.
 		return
 	for(var/datum/timedevent/event in processing)
-		if(event.timeToRun <= world.time)
-			event.callback.InvokeAsync()
+		if(!event.thingToCall || qdeleted(event.thingToCall))
 			qdel(event)
-		if (MC_TICK_CHECK)
-			return
+		if(event.timeToRun <= world.time)
+			runevent(event)
+			qdel(event)
 
-/datum/subsystem/timer/Recover()
-	processing |= SStimer.processing
-	hashes |= SStimer.hashes
+/datum/subsystem/timer/proc/runevent(datum/timedevent/event)
+	set waitfor = 0
+	call(event.thingToCall, event.procToCall)(arglist(event.argList))
 
 /datum/timedevent
-	var/datum/callback/callback
+	var/thingToCall
+	var/procToCall
 	var/timeToRun
+	var/argList
 	var/id
 	var/hash
 	var/static/nextid = 1
 
 /datum/timedevent/New()
-	id = nextid++
+	id = nextid
+	nextid++
 
 /datum/timedevent/Destroy()
 	SStimer.processing -= src
 	SStimer.hashes -= hash
 	return QDEL_HINT_IWILLGC
 
-/proc/addtimer(datum/callback/callback, wait, unique = TIMER_NORMAL)
-	if (!callback)
+/proc/addtimer(thingToCall, procToCall, wait, unique = FALSE, ...)
+	if (!SStimer) //can't run timers before the mc has been created
+		return
+	if (!thingToCall || !procToCall || wait <= 0)
 		return
 	if (!SStimer.can_fire)
 		SStimer.can_fire = 1
+		SStimer.next_fire = world.time + SStimer.wait
 
 	var/datum/timedevent/event = new()
-	event.callback = callback
+	event.thingToCall = thingToCall
+	event.procToCall = procToCall
 	event.timeToRun = world.time + wait
-	var/list/hashlist = args.Copy()
+	event.hash = jointext(args, null)
+	if(args.len > 4)
+		event.argList = args.Copy(5)
 
-	hashlist[1] = "[callback.object](\ref[callback.object])"
-	hashlist.Insert(2, callback.delegate, callback.arguments)
-	event.hash = jointext(hashlist, null)
-
-	if(unique == TIMER_UNIQUE)
-		var/datum/timedevent/hash_event = SStimer.hashes[event.hash]
-		if(hash_event)
-			return hash_event.id
-
-	SStimer.hashes[event.hash] = event
-	if (wait <= 0)
-		callback.InvokeAsync()
-		SStimer.hashes -= event.hash
-		return
-
+	// Check for dupes if unique = 1.
+	if(unique)
+		if(event.hash in SStimer.hashes)
+			return
 	// If we are unique (or we're not checking that), add the timer and return the id.
 	SStimer.processing += event
-
+	SStimer.hashes += event.hash
 	return event.id
 
 /proc/deltimer(id)

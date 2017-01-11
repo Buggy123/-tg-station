@@ -18,7 +18,6 @@
 	window_id = "autosec"
 	window_name = "Automatic Security Unit v1.6"
 	allow_pai = 0
-	data_hud_type = DATA_HUD_SECURITY_ADVANCED
 
 	var/mob/living/carbon/target
 	var/oldtarget_name
@@ -144,13 +143,13 @@ Auto Patrol: []"},
 		mode = BOT_HUNT
 
 /mob/living/simple_animal/bot/secbot/attack_hand(mob/living/carbon/human/H)
-	if(H.a_intent == INTENT_HARM)
+	if(H.a_intent == "harm")
 		retaliate(H)
 	return ..()
 
 /mob/living/simple_animal/bot/secbot/attackby(obj/item/weapon/W, mob/user, params)
 	..()
-	if(istype(W, /obj/item/weapon/weldingtool) && user.a_intent != INTENT_HARM) // Any intent but harm will heal, so we shouldn't get angry.
+	if(istype(W, /obj/item/weapon/weldingtool) && user.a_intent != "harm") // Any intent but harm will heal, so we shouldn't get angry.
 		return
 	if(!istype(W, /obj/item/weapon/screwdriver) && (W.force) && (!target) && (W.damtype != STAMINA) ) // Added check for welding tool to fix #2432. Welding tool behavior is handled in superclass.
 		retaliate(user)
@@ -189,7 +188,7 @@ Auto Patrol: []"},
 /mob/living/simple_animal/bot/secbot/hitby(atom/movable/AM, skipcatch = 0, hitpush = 1, blocked = 0)
 	if(istype(AM, /obj/item))
 		var/obj/item/I = AM
-		if(I.throwforce < src.health && I.thrownby && ishuman(I.thrownby))
+		if(I.throwforce < src.health && I.thrownby && (istype(I.thrownby, /mob/living/carbon/human)))
 			var/mob/living/carbon/human/H = I.thrownby
 			retaliate(H)
 	..()
@@ -215,7 +214,7 @@ Auto Patrol: []"},
 	spawn(2)
 		icon_state = "secbot[on]"
 	var/threat = 5
-	if(ishuman(C))
+	if(istype(C, /mob/living/carbon/human))
 		C.stuttering = 5
 		C.Stun(5)
 		C.Weaken(5)
@@ -225,7 +224,6 @@ Auto Patrol: []"},
 		C.Weaken(5)
 		C.stuttering = 5
 		C.Stun(5)
-		threat = C.assess_threat()
 	add_logs(src,C,"stunned")
 	if(declare_arrests)
 		var/area/location = get_area(src)
@@ -377,13 +375,13 @@ Auto Patrol: []"},
 
 	var/obj/item/weapon/secbot_assembly/Sa = new /obj/item/weapon/secbot_assembly(Tsec)
 	Sa.build_step = 1
-	Sa.add_overlay("hs_hole")
+	Sa.overlays += "hs_hole"
 	Sa.created_name = name
 	new /obj/item/device/assembly/prox_sensor(Tsec)
 	new /obj/item/weapon/melee/baton(Tsec)
 
 	if(prob(50))
-		new /obj/item/bodypart/l_arm/robot(Tsec)
+		new /obj/item/robot_parts/l_arm(Tsec)
 
 	var/datum/effect_system/spark_spread/s = new /datum/effect_system/spark_spread
 	s.set_up(3, 1, src)
@@ -403,7 +401,14 @@ Auto Patrol: []"},
 		var/mob/living/carbon/C = AM
 		if(!istype(C) || !C || in_range(src, target))
 			return
-		knockOver(C)
+		C.visible_message("<span class='warning'>[pick( \
+						  "[C] dives out of [src]'s way!", \
+						  "[C] stumbles over [src]!", \
+						  "[C] jumps out of [src]'s path!", \
+						  "[C] trips over [src] and falls!", \
+						  "[C] topples over [src]!", \
+						  "[C] leaps out of [src]'s way!")]</span>")
+		C.Weaken(2)
 		return
 	..()
 

@@ -12,9 +12,7 @@
 	idle_power_usage = 0
 	active_power_usage = 0
 	var/id = 0
-	obj_integrity = 150
-	max_integrity = 150
-	integrity_failure = 50
+	var/health = 10
 	var/obscured = 0
 	var/sunfrac = 0
 	var/adir = SOUTH // actual dir
@@ -52,61 +50,50 @@
 		S.anchored = 1
 	S.loc = src
 	if(S.glass_type == /obj/item/stack/sheet/rglass) //if the panel is in reinforced glass
-		max_integrity *= 2 								 //this need to be placed here, because panels already on the map don't have an assembly linked to
-		obj_integrity = max_integrity
+		health *= 2 								 //this need to be placed here, because panels already on the map don't have an assembly linked to
 	update_icon()
 
 /obj/machinery/power/solar/attackby(obj/item/weapon/W, mob/user, params)
 	if(istype(W, /obj/item/weapon/crowbar))
 		playsound(src.loc, 'sound/machines/click.ogg', 50, 1)
 		user.visible_message("[user] begins to take the glass off the solar panel.", "<span class='notice'>You begin to take the glass off the solar panel...</span>")
-		if(do_after(user, 50*W.toolspeed, target = src))
-			playsound(src.loc, 'sound/items/Deconstruct.ogg', 50, 1)
-			user.visible_message("[user] takes the glass off the solar panel.", "<span class='notice'>You take the glass off the solar panel.</span>")
-			deconstruct(TRUE)
-	else
-		return ..()
-
-/obj/machinery/power/solar/play_attack_sound(damage_amount, damage_type = BRUTE, damage_flag = 0)
-	switch(damage_type)
-		if(BRUTE)
-			if(stat & BROKEN)
-				playsound(loc, 'sound/effects/hit_on_shattered_glass.ogg', 60, 1)
-			else
-				playsound(loc, 'sound/effects/Glasshit.ogg', 90, 1)
-		if(BURN)
-			playsound(loc, 'sound/items/Welder.ogg', 100, 1)
-
-
-/obj/machinery/power/solar/obj_break(damage_flag)
-	if(!(stat & BROKEN) && !(flags & NODECONSTRUCT))
-		playsound(loc, 'sound/effects/Glassbr3.ogg', 100, 1)
-		stat |= BROKEN
-		unset_control()
-		update_icon()
-
-/obj/machinery/power/solar/deconstruct(disassembled = TRUE)
-	if(!(flags & NODECONSTRUCT))
-		if(disassembled)
+		if(do_after(user, 50/W.toolspeed, target = src))
 			var/obj/item/solar_assembly/S = locate() in src
 			if(S)
-				S.forceMove(loc)
+				S.loc = src.loc
 				S.give_glass(stat & BROKEN)
+
+			playsound(src.loc, 'sound/items/Deconstruct.ogg', 50, 1)
+			user.visible_message("[user] takes the glass off the solar panel.", "<span class='notice'>You take the glass off the solar panel.</span>")
+			qdel(src)
+		return
+	else if (W)
+		src.add_fingerprint(user)
+		src.health -= W.force
+		src.healthcheck()
+	..()
+
+/obj/machinery/power/solar/proc/healthcheck()
+	if (src.health <= 0)
+		if(!(stat & BROKEN))
+			set_broken()
 		else
-			playsound(src, "shatter", 70, 1)
 			new /obj/item/weapon/shard(src.loc)
 			new /obj/item/weapon/shard(src.loc)
-	qdel(src)
+			qdel(src)
+			return
+	return
 
 
 /obj/machinery/power/solar/update_icon()
 	..()
-	cut_overlays()
+	overlays.Cut()
 	if(stat & BROKEN)
-		add_overlay(image('icons/obj/power.dmi', icon_state = "solar_panel-b", layer = FLY_LAYER))
+		overlays += image('icons/obj/power.dmi', icon_state = "solar_panel-b", layer = FLY_LAYER)
 	else
-		add_overlay(image('icons/obj/power.dmi', icon_state = "solar_panel", layer = FLY_LAYER))
-		src.setDir(angle2dir(adir))
+		overlays += image('icons/obj/power.dmi', icon_state = "solar_panel", layer = FLY_LAYER)
+		src.dir = angle2dir(adir)
+	return
 
 //calculates the fraction of the sunlight that the panel recieves
 /obj/machinery/power/solar/proc/update_solar_exposure()
@@ -140,6 +127,24 @@
 		else //if we're no longer on the same powernet, remove from control computer
 			unset_control()
 
+/obj/machinery/power/solar/proc/set_broken()
+	. = (!(stat & BROKEN))
+	stat |= BROKEN
+	unset_control()
+	update_icon()
+	return
+
+
+/obj/machinery/power/solar/ex_act(severity, target)
+	..()
+	if(!gc_destroyed)
+		switch(severity)
+			if(2)
+				if(prob(50))
+					set_broken()
+			if(3)
+				if(prob(25))
+					set_broken()
 
 /obj/machinery/power/solar/fake/New(var/turf/loc, var/obj/item/solar_assembly/S)
 	..(loc, S, 0)
@@ -184,7 +189,7 @@
 	icon = 'icons/obj/power.dmi'
 	icon_state = "sp_base"
 	item_state = "electropack"
-	w_class = WEIGHT_CLASS_BULKY // Pretty big!
+	w_class = 4 // Pretty big!
 	anchored = 0
 	var/tracker = 0
 	var/glass_type = null
@@ -212,10 +217,10 @@
 		anchored = !anchored
 		if(anchored)
 			user.visible_message("[user] wrenches the solar assembly into place.", "<span class='notice'>You wrench the solar assembly into place.</span>")
-			playsound(src.loc, W.usesound, 75, 1)
+			playsound(src.loc, 'sound/items/Ratchet.ogg', 75, 1)
 		else
 			user.visible_message("[user] unwrenches the solar assembly from its place.", "<span class='notice'>You unwrench the solar assembly from its place.</span>")
-			playsound(src.loc, W.usesound, 75, 1)
+			playsound(src.loc, 'sound/items/Ratchet.ogg', 75, 1)
 		return 1
 
 	if(istype(W, /obj/item/stack/sheet/glass) || istype(W, /obj/item/stack/sheet/rglass))
@@ -250,7 +255,7 @@
 			tracker = 0
 			user.visible_message("[user] takes out the electronics from the solar assembly.", "<span class='notice'>You take out the electronics from the solar assembly.</span>")
 			return 1
-	return ..()
+	..()
 
 //
 // Solar Control Computer
@@ -265,9 +270,6 @@
 	density = 1
 	use_power = 1
 	idle_power_usage = 250
-	obj_integrity = 200
-	max_integrity = 200
-	integrity_failure = 100
 	var/icon_screen = "solar"
 	var/icon_keyboard = "power_key"
 	var/id = 0
@@ -277,7 +279,7 @@
 	var/lastgen = 0
 	var/track = 0			// 0= off  1=timed  2=auto (tracker)
 	var/trackrate = 600		// 300-900 seconds
-	var/nexttime = 0		// time for a panel to rotate of 1 degree in manual tracking
+	var/nexttime = 0		// time for a panel to rotate of 1° in manual tracking
 	var/obj/machinery/power/tracker/connected_tracker = null
 	var/list/connected_panels = list()
 
@@ -342,17 +344,17 @@
 	set_panels(currentdir)
 
 /obj/machinery/power/solar_control/update_icon()
-	cut_overlays()
+	overlays.Cut()
 	if(stat & NOPOWER)
-		add_overlay("[icon_keyboard]_off")
+		overlays += "[icon_keyboard]_off"
 		return
-	add_overlay(icon_keyboard)
+	overlays += icon_keyboard
 	if(stat & BROKEN)
-		add_overlay("[icon_state]_broken")
+		overlays += "[icon_state]_broken"
 	else
-		add_overlay(icon_screen)
+		overlays += icon_screen
 	if(currentdir > -1)
-		add_overlay(image('icons/obj/computer.dmi', "solcon-o", FLY_LAYER, angle2dir(currentdir)))
+		overlays += image('icons/obj/computer.dmi', "solcon-o", FLY_LAYER, angle2dir(currentdir))
 
 /obj/machinery/power/solar_control/ui_interact(mob/user, ui_key = "main", datum/tgui/ui = null, force_open = 0, \
 												datum/tgui/master_ui = null, datum/ui_state/state = default_state)
@@ -416,13 +418,13 @@
 
 /obj/machinery/power/solar_control/attackby(obj/item/I, mob/user, params)
 	if(istype(I, /obj/item/weapon/screwdriver))
-		playsound(src.loc, I.usesound, 50, 1)
-		if(do_after(user, 20*I.toolspeed, target = src))
+		playsound(src.loc, 'sound/items/Screwdriver.ogg', 50, 1)
+		if(do_after(user, 20/I.toolspeed, target = src))
 			if (src.stat & BROKEN)
 				user << "<span class='notice'>The broken glass falls out.</span>"
-				var/obj/structure/frame/computer/A = new /obj/structure/frame/computer( src.loc )
+				var/obj/structure/computerframe/A = new /obj/structure/computerframe( src.loc )
 				new /obj/item/weapon/shard( src.loc )
-				var/obj/item/weapon/circuitboard/computer/solar_control/M = new /obj/item/weapon/circuitboard/computer/solar_control( A )
+				var/obj/item/weapon/circuitboard/solar_control/M = new /obj/item/weapon/circuitboard/solar_control( A )
 				for (var/obj/C in src)
 					C.loc = src.loc
 				A.circuit = M
@@ -432,8 +434,8 @@
 				qdel(src)
 			else
 				user << "<span class='notice'>You disconnect the monitor.</span>"
-				var/obj/structure/frame/computer/A = new /obj/structure/frame/computer( src.loc )
-				var/obj/item/weapon/circuitboard/computer/solar_control/M = new /obj/item/weapon/circuitboard/computer/solar_control( A )
+				var/obj/structure/computerframe/A = new /obj/structure/computerframe( src.loc )
+				var/obj/item/weapon/circuitboard/solar_control/M = new /obj/item/weapon/circuitboard/solar_control( A )
 				for (var/obj/C in src)
 					C.loc = src.loc
 				A.circuit = M
@@ -441,26 +443,9 @@
 				A.icon_state = "4"
 				A.anchored = 1
 				qdel(src)
-	else if(user.a_intent != INTENT_HARM && !(I.flags & NOBLUDGEON))
-		src.attack_hand(user)
 	else
-		return ..()
-
-/obj/machinery/power/solar_control/play_attack_sound(damage_amount, damage_type = BRUTE, damage_flag = 0)
-	switch(damage_type)
-		if(BRUTE)
-			if(stat & BROKEN)
-				playsound(src.loc, 'sound/effects/hit_on_shattered_glass.ogg', 70, 1)
-			else
-				playsound(src.loc, 'sound/effects/Glasshit.ogg', 75, 1)
-		if(BURN)
-			playsound(src.loc, 'sound/items/Welder.ogg', 100, 1)
-
-/obj/machinery/power/solar_control/obj_break(damage_flag)
-	if(!(stat & BROKEN) && !(flags & NODECONSTRUCT))
-		playsound(loc, 'sound/effects/Glassbr3.ogg', 100, 1)
-		stat |= BROKEN
-		update_icon()
+		src.attack_hand(user)
+	return
 
 /obj/machinery/power/solar_control/process()
 	lastgen = gen
@@ -474,9 +459,9 @@
 			connected_tracker.unset_control()
 
 	if(track==1 && trackrate) //manual tracking and set a rotation speed
-		if(nexttime <= world.time) //every time we need to increase/decrease the angle by 1ï¿½...
+		if(nexttime <= world.time) //every time we need to increase/decrease the angle by 1°...
 			targetdir = (targetdir + trackrate/abs(trackrate) + 360) % 360 	//... do it
-			nexttime += 36000/abs(trackrate) //reset the counter for the next 1ï¿½
+			nexttime += 36000/abs(trackrate) //reset the counter for the next 1°
 
 //rotates the panel to the passed angle
 /obj/machinery/power/solar_control/proc/set_panels(currentdir)
@@ -494,6 +479,26 @@
 	update_icon()
 
 
+/obj/machinery/power/solar_control/proc/set_broken()
+	stat |= BROKEN
+	update_icon()
+
+
+/obj/machinery/power/solar_control/ex_act(severity, target)
+	..()
+	if(!gc_destroyed)
+		switch(severity)
+			if(2)
+				if(prob(50))
+					set_broken()
+			if(3)
+				if(prob(25))
+					set_broken()
+
+/obj/machinery/power/solar_control/blob_act()
+	if (prob(75))
+		set_broken()
+		src.density = 0
 
 
 //

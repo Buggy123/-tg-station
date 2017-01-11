@@ -15,17 +15,14 @@
 	// Otherwise jump
 	else if(A.loc)
 		loc = get_turf(A)
-		update_parallax_contents()
 
 /mob/dead/observer/ClickOn(var/atom/A, var/params)
+	
 	if(client.click_intercept)
 		if(call(client.click_intercept,"InterceptClickOn")(src,params,A))
 			return
 
 	var/list/modifiers = params2list(params)
-	if(modifiers["shift"] && modifiers["middle"])
-		ShiftMiddleClickOn(A)
-		return
 	if(modifiers["middle"])
 		MiddleClickOn(A)
 		return
@@ -52,6 +49,7 @@
 			attack_ai(user)
 		if(user.client.prefs.inquisitive_ghost)
 			user.examinate(src)
+	return
 
 // ---------------------------------------
 // And here are some good things for free:
@@ -61,21 +59,21 @@
 	var/atom/l = loc
 	var/obj/machinery/computer/teleporter/com = locate(/obj/machinery/computer/teleporter, locate(l.x - 2, l.y, l.z))
 	if(com && com.locked)
-		user.forceMove(get_turf(com.locked))
+		user.loc = get_turf(com.locked)
 
 /obj/effect/portal/attack_ghost(mob/user)
 	if(target)
-		user.forceMove(get_turf(target))
+		user.loc = get_turf(target)
 
 /obj/machinery/gateway/centerstation/attack_ghost(mob/user)
 	if(awaygate)
-		user.forceMove(awaygate.loc)
+		user.loc = awaygate.loc
 	else
 		user << "[src] has no destination."
 
 /obj/machinery/gateway/centeraway/attack_ghost(mob/user)
 	if(stationgate)
-		user.forceMove(stationgate.loc)
+		user.loc = stationgate.loc
 	else
 		user << "[src] has no destination."
 
@@ -85,7 +83,8 @@
 
 /obj/machinery/teleport/hub/attack_ghost(mob/user)
 	if(power_station && power_station.engaged && power_station.teleporter_console && power_station.teleporter_console.target)
-		user.forceMove(get_turf(power_station.teleporter_console.target))
+		user.Move(get_turf(power_station.teleporter_console.target))
+	return
 
 // -------------------------------------------
 // This was supposed to be used by adminghosts

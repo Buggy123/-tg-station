@@ -21,19 +21,17 @@
 		icon_open = "[initial(icon_state)]_o_off"
 
 	if(default_deconstruction_screwdriver(user, icon_open, icon_closed, P))
+		updateUsrDialog()
 		return
 
-	else if(exchange_parts(user, P))
+	if(exchange_parts(user, P))
 		return
 
 	// Using a multitool lets you access the receiver's interface
-	else if(istype(P, /obj/item/device/multitool))
+	if(istype(P, /obj/item/device/multitool))
 		attack_hand(user)
 
-	else if(default_deconstruction_crowbar(P))
-		return
-	else
-		return ..()
+	default_deconstruction_crowbar(P)
 
 
 /obj/machinery/telecomms/attack_ai(mob/user)
@@ -44,7 +42,7 @@
 	// You need a multitool to use this, or be silicon
 	if(!issilicon(user))
 		// istype returns false if the value is null
-		if(!istype(user.get_active_held_item(), /obj/item/device/multitool))
+		if(!istype(user.get_active_hand(), /obj/item/device/multitool))
 			return
 
 	if(stat & (BROKEN|NOPOWER))
@@ -133,14 +131,14 @@
 
 	var/obj/item/device/multitool/P = null
 	// Let's double check
-	if(!issilicon(user) && istype(user.get_active_held_item(), /obj/item/device/multitool))
-		P = user.get_active_held_item()
+	if(!issilicon(user) && istype(user.get_active_hand(), /obj/item/device/multitool))
+		P = user.get_active_hand()
 	else if(isAI(user))
 		var/mob/living/silicon/ai/U = user
 		P = U.aiMulti
-	else if(iscyborg(user) && in_range(user, src))
-		if(istype(user.get_active_held_item(), /obj/item/device/multitool))
-			P = user.get_active_held_item()
+	else if(isrobot(user) && in_range(user, src))
+		if(istype(user.get_active_hand(), /obj/item/device/multitool))
+			P = user.get_active_hand()
 	return P
 
 // Additional Options for certain machines. Use this when you want to add an option to a specific machine.
@@ -179,7 +177,7 @@
 		if(result)
 			temp = "<font color = #666633>-% [src]'s signal has been successfully changed.</font color>"
 		else
-			temp = "<font color = #666633>-% [src] could not lock its signal onto the station. Two broadcasters or receivers required.</font color>"
+			temp = "<font color = #666633>-% [src] could not lock it's signal onto the station. Two broadcasters or receivers required.</font color>"
 
 // BUS
 
@@ -209,7 +207,7 @@
 		return
 
 	if(!issilicon(usr))
-		if(!istype(usr.get_active_held_item(), /obj/item/device/multitool))
+		if(!istype(usr.get_active_hand(), /obj/item/device/multitool))
 			return
 
 	var/obj/item/device/multitool/P = get_multitool(usr)

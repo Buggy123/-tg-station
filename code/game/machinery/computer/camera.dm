@@ -3,7 +3,7 @@
 	desc = "Used to access the various cameras on the station."
 	icon_screen = "cameras"
 	icon_keyboard = "security_key"
-	circuit = /obj/item/weapon/circuitboard/computer/security
+	circuit = /obj/item/weapon/circuitboard/security
 	var/last_pic = 1
 	var/list/network = list("SS13")
 	var/mapping = 0//For the overview file, interesting bit of code.
@@ -27,7 +27,7 @@
 		if(!Adjacent(user))
 			user.unset_machine()
 			return
-	else if(iscyborg(user))
+	else if(isrobot(user))
 		var/list/viewing = viewers(src)
 		if(!viewing.Find(user))
 			user.unset_machine()
@@ -68,7 +68,6 @@
 		if(!(user in watchers))
 			user.unset_machine() // no usable camera on the network, we disconnect the user from the computer.
 			return
-	playsound(src, 'sound/machines/terminal_prompt.ogg', 25, 0)
 	use_camera_console(user)
 
 /obj/machinery/computer/security/proc/use_camera_console(mob/user)
@@ -78,20 +77,18 @@
 		return
 	if(!t)
 		user.unset_machine()
-		playsound(src, 'sound/machines/terminal_off.ogg', 25, 0)
 		return
 
 	var/obj/machinery/camera/C = camera_list[t]
 
 	if(t == "Cancel")
 		user.unset_machine()
-		playsound(src, 'sound/machines/terminal_off.ogg', 25, 0)
 		return
 	if(C)
 		var/camera_fail = 0
 		if(!C.can_use() || user.machine != src || user.eye_blind || user.incapacitated())
 			camera_fail = 1
-		else if(iscyborg(user))
+		else if(isrobot(user))
 			var/list/viewing = viewers(src)
 			if(!viewing.Find(user))
 				camera_fail = 1
@@ -103,18 +100,16 @@
 			user.unset_machine()
 			return 0
 
-		playsound(src, 'sound/machines/terminal_prompt_confirm.ogg', 25, 0)
 		if(isAI(user))
 			var/mob/living/silicon/ai/A = user
 			A.eyeobj.setLoc(get_turf(C))
 			A.client.eye = A.eyeobj
 		else
 			user.reset_perspective(C)
-			user.overlay_fullscreen("flash", /obj/screen/fullscreen/flash/static)
-			user.clear_fullscreen("flash", 5)
 		watchers[user] = C
 		use_power(50)
-		addtimer(CALLBACK(src, .proc/use_camera_console, user), 5)
+		spawn(5)
+			use_camera_console(user)
 	else
 		user.unset_machine()
 
@@ -152,7 +147,6 @@
 	network = list("thunder")
 	density = 0
 	circuit = null
-	clockwork = TRUE //it'd look very weird
 
 /obj/machinery/computer/security/telescreen/update_icon()
 	icon_state = initial(icon_state)
@@ -175,7 +169,6 @@
 	icon_state = "television"
 	icon_keyboard = null
 	icon_screen = "detective_tv"
-	clockwork = TRUE //it'd look weird
 
 
 /obj/machinery/computer/security/mining
@@ -184,4 +177,4 @@
 	icon_screen = "mining"
 	icon_keyboard = "mining_key"
 	network = list("MINE")
-	circuit = /obj/item/weapon/circuitboard/computer/mining
+	circuit = "/obj/item/weapon/circuitboard/mining"

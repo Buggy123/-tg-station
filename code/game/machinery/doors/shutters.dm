@@ -3,8 +3,7 @@
 	name = "shutters"
 	desc = "Heavy duty metal shutters that opens mechanically."
 	icon = 'icons/obj/doors/shutters.dmi'
-	layer = CLOSED_DOOR_LAYER
-	damage_deflection = 20
+	layer = 3.1
 
 /obj/machinery/door/poddoor/shutters/preopen
 	icon_state = "open"
@@ -16,14 +15,14 @@
 
 /obj/machinery/door/poddoor/shutters/New()
 	..()
-	layer = CLOSED_DOOR_LAYER	//to handle /obj/machinery/door/New() resetting the layer.
+	layer = 3.1	//to handle /obj/machinery/door/New() resetting the layer.
 
 
 /obj/machinery/door/poddoor/shutters/open(ignorepower = 0)
 	..()
-	layer = CLOSED_DOOR_LAYER
+	layer = 3.1
 
 
 /obj/machinery/door/poddoor/shutters/close(ignorepower = 0)
 	..()
-	layer = CLOSED_DOOR_LAYER
+	layer = 3.1

@@ -8,12 +8,7 @@
 	product = /obj/item/weapon/reagent_containers/food/snacks/grown/eggplant
 	yield = 2
 	potency = 20
-	growing_icon = 'icons/obj/hydroponics/growing_vegetables.dmi'
-	icon_grow = "eggplant-grow"
-	icon_dead = "eggplant-dead"
-	genes = list(/datum/plant_gene/trait/repeated_harvest)
 	mutatelist = list(/obj/item/seeds/eggplant/eggy)
-	reagents_add = list("vitamin" = 0.04, "nutriment" = 0.1)
 
 /obj/item/weapon/reagent_containers/food/snacks/grown/eggplant
 	seed = /obj/item/seeds/eggplant
@@ -21,6 +16,7 @@
 	desc = "Maybe there's a chicken inside?"
 	icon_state = "eggplant"
 	filling_color = "#800080"
+	reagents_add = list("vitamin" = 0.04, "nutriment" = 0.1)
 	bitesize_mod = 2
 
 // Egg-Plant
@@ -32,7 +28,7 @@
 	lifespan = 75
 	production = 12
 	mutatelist = list()
-	reagents_add = list("nutriment" = 0.1)
+	// No rarity: Centcom ships these to us in the exotic seeds crate.
 
 /obj/item/weapon/reagent_containers/food/snacks/grown/shell/eggy
 	seed = /obj/item/seeds/eggplant/eggy
@@ -41,4 +37,5 @@
 	icon_state = "eggyplant"
 	trash = /obj/item/weapon/reagent_containers/food/snacks/egg
 	filling_color = "#F8F8FF"
+	reagents_add = list("nutriment" = 0.1)
 	bitesize_mod = 2

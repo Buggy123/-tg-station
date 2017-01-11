@@ -18,14 +18,14 @@
 	flipped = 1
 
 /obj/machinery/atmospherics/components/trinary/mixer/update_icon()
-	cut_overlays()
+	overlays.Cut()
 	for(var/direction in cardinal)
 		if(direction & initialize_directions)
 			var/obj/machinery/atmospherics/node = findConnecting(direction)
 			if(node)
-				add_overlay(getpipeimage('icons/obj/atmospherics/components/trinary_devices.dmi', "cap", direction, node.pipe_color))
+				overlays += getpipeimage('icons/obj/atmospherics/components/trinary_devices.dmi', "cap", direction, node.pipe_color)
 				continue
-			add_overlay(getpipeimage('icons/obj/atmospherics/components/trinary_devices.dmi', "cap", direction))
+			overlays += getpipeimage('icons/obj/atmospherics/components/trinary_devices.dmi', "cap", direction)
 	return ..()
 
 /obj/machinery/atmospherics/components/trinary/mixer/update_icon_nopipes()

@@ -6,12 +6,11 @@
 	attachable = 1
 	var/id = null
 	var/can_change_id = 0
-	var/cooldown = 0//Door cooldowns
 
 /obj/item/device/assembly/control/examine(mob/user)
 	..()
 	if(id)
-		user << "<span class='notice'>Its channel ID is '[id]'.</span>"
+		user << "It's channel ID is '[id]'."
 
 
 /obj/item/device/assembly/control/activate()
@@ -47,14 +46,13 @@
 
 /obj/item/device/assembly/control/airlock/activate()
 	cooldown = 1
-	var/doors_need_closing = FALSE
-	var/list/obj/machinery/door/airlock/open_or_close = list()
 	for(var/obj/machinery/door/airlock/D in airlocks)
 		if(D.id_tag == src.id)
 			if(specialfunctions & OPEN)
-				open_or_close += D
-				if(!D.density)
-					doors_need_closing = TRUE
+				if(D.density)
+					D.open()
+				else
+					D.close()
 			if(specialfunctions & IDSCAN)
 				D.aiDisabledIdScanner = !D.aiDisabledIdScanner
 			if(specialfunctions & BOLTS)
@@ -62,18 +60,9 @@
 					D.locked = !D.locked
 					D.update_icon()
 			if(specialfunctions & SHOCK)
-				if(D.secondsElectrified)
-					D.secondsElectrified = -1
-					D.shockedby += "\[[time_stamp()]\][usr](ckey:[usr.ckey])"
-					add_logs(usr, D, "electrified")
-				else
-					D.secondsElectrified = 0
+				D.secondsElectrified = D.secondsElectrified ? 0 : -1
 			if(specialfunctions & SAFE)
 				D.safe = !D.safe
-
-	for(var/D in open_or_close)
-		addtimer(CALLBACK(D, doors_need_closing ? /obj/machinery/door/airlock.proc/close : /obj/machinery/door/airlock.proc/open), 0)
-
 	sleep(10)
 	cooldown = 0
 

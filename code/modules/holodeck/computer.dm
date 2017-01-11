@@ -108,7 +108,7 @@
 /obj/machinery/computer/holodeck/process()
 	if(damaged)
 		if(prob(10))
-			for(var/turf/T in linked)
+			for(var/turf/simulated/T in linked)
 				if(prob(5))
 					var/datum/effect_system/spark_spread/s = new
 					s.set_up(2, 1, T)
@@ -143,14 +143,14 @@
 
 /obj/machinery/computer/holodeck/proc/floorcheck()
 	for(var/turf/T in linked)
-		if(!T.intact || isspaceturf(T))
+		if(!T.intact || istype(T,/turf/space))
 			return 0
 	return 1
 
 /obj/machinery/computer/holodeck/Topic(href, list/href_list)
 	if(..())
 		return
-	if(!Adjacent(usr) && !issilicon(usr))
+	if(!Adjacent(usr) && !istype(usr, /mob/living/silicon))
 		return
 	usr.set_machine(src)
 	add_fingerprint(usr)
@@ -204,6 +204,6 @@
 	emergency_shutdown()
 	..()
 
-/obj/machinery/computer/holodeck/blob_act(obj/structure/blob/B)
+/obj/machinery/computer/holodeck/blob_act()
 	emergency_shutdown()
 	..()

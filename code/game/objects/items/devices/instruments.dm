@@ -1,9 +1,8 @@
 //copy pasta of the space piano, don't hurt me -Pete
 /obj/item/device/instrument
 	name = "generic instrument"
-	resistance_flags = FLAMMABLE
-	obj_integrity = 100
-	max_integrity = 100
+	burn_state = FLAMMABLE
+	burntime = 20
 	var/datum/song/handheld/song
 	var/instrumentId = "generic"
 	var/instrumentExt = "ogg"
@@ -11,7 +10,6 @@
 /obj/item/device/instrument/New()
 	song = new(instrumentId, src)
 	song.instrumentExt = instrumentExt
-	..()
 
 /obj/item/device/instrument/Destroy()
 	qdel(song)
@@ -19,7 +17,7 @@
 	return ..()
 
 /obj/item/device/instrument/suicide_act(mob/user)
-	user.visible_message("<span class='suicide'>[user] begins to play 'Gloomy Sunday'! It looks like [user.p_theyre()] trying to commit suicide!</span>")
+	user.visible_message("<span class='suicide'>[user] begins to play 'Gloomy Sunday'! It looks like \he's trying to commit suicide..</span>")
 	return (BRUTELOSS)
 
 /obj/item/device/instrument/initialize()
@@ -52,13 +50,6 @@
 	hitsound = "swing_hit"
 	instrumentId = "violin"
 
-/obj/item/device/instrument/violin/golden
-	name = "golden violin"
-	desc = "A golden musical instrument with four strings and a bow. \"The devil went down to space, he was looking for an assistant to grief.\""
-	icon_state = "golden_violin"
-	item_state = "golden_violin"
-	resistance_flags = LAVA_PROOF | FIRE_PROOF | ACID_PROOF
-
 /obj/item/device/instrument/guitar
 	name = "guitar"
 	desc = "It's made of wood and has bronze strings."
@@ -69,14 +60,3 @@
 	attack_verb = list("played metal on", "serenaded", "crashed", "smashed")
 	hitsound = 'sound/weapons/stringsmash.ogg'
 	instrumentId = "guitar"
-
-/obj/item/device/instrument/eguitar
-	name = "electric guitar"
-	desc = "Makes all your shredding needs possible."
-	icon = 'icons/obj/musician.dmi'
-	icon_state = "eguitar"
-	item_state = "eguitar"
-	force = 12
-	attack_verb = list("played metal on", "shredded", "crashed", "smashed")
-	hitsound = 'sound/weapons/stringsmash.ogg'
-	instrumentId = "eguitar"

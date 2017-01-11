@@ -46,8 +46,11 @@
 		hijack.owner = user.mind
 		user.mind.objectives += hijack
 
-		user.mind.announce_objectives()
-		
+		var/obj_count = 1
+		for(var/datum/objective/OBJ in user.mind.objectives)
+			user << "<B>Objective #[obj_count]</B>: [OBJ.explanation_text]"
+			obj_count++
+
 		user << "You have a very bad feeling about this."
 
 	return

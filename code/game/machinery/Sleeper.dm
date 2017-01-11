@@ -7,39 +7,31 @@
 
 /obj/machinery/sleeper
 	name = "sleeper"
-	desc = "An enclosed machine used to stabilize and heal patients."
 	icon = 'icons/obj/Cryogenic2.dmi'
-	icon_state = "sleeper"
+	icon_state = "sleeper-open"
 	density = FALSE
 	anchored = TRUE
 	state_open = TRUE
 	var/efficiency = 1
 	var/min_health = -25
 	var/list/available_chems
-	var/controls_inside = FALSE
 	var/list/possible_chems = list(
 		list("epinephrine", "morphine", "salbutamol", "bicaridine", "kelotane"),
-		list("oculine","inacusiate"),
+		list("oculine"),
 		list("antitoxin", "mutadone", "mannitol", "pen_acid"),
 		list("omnizine")
 	)
 
 /obj/machinery/sleeper/New()
 	..()
-	var/obj/item/weapon/circuitboard/machine/B = new /obj/item/weapon/circuitboard/machine/sleeper(null)
-	B.apply_default_parts(src)
-	update_icon()
-
-/obj/item/weapon/circuitboard/machine/sleeper
-	name = "Sleeper (Machine Board)"
-	build_path = /obj/machinery/sleeper
-	origin_tech = "programming=3;biotech=2;engineering=3"
-	req_components = list(
-							/obj/item/weapon/stock_parts/matter_bin = 1,
-							/obj/item/weapon/stock_parts/manipulator = 1,
-							/obj/item/stack/cable_coil = 1,
-							/obj/item/weapon/stock_parts/console_screen = 1,
-							/obj/item/stack/sheet/glass = 1)
+	component_parts = list()
+	component_parts += new /obj/item/weapon/stock_parts/matter_bin(null)
+	component_parts += new /obj/item/weapon/stock_parts/manipulator(null)
+	component_parts += new /obj/item/weapon/stock_parts/console_screen(null)
+	component_parts += new /obj/item/weapon/stock_parts/console_screen(null)
+	component_parts += new /obj/item/stack/cable_coil(null, 1)
+	component_parts += new /obj/item/weapon/circuitboard/sleeper(null)
+	RefreshParts()
 
 /obj/machinery/sleeper/RefreshParts()
 	var/E
@@ -56,17 +48,18 @@
 		available_chems |= possible_chems[i]
 
 /obj/machinery/sleeper/update_icon()
-	icon_state = initial(icon_state)
 	if(state_open)
-		icon_state += "-open"
+		icon_state = "sleeper-open"
+	else
+		icon_state = "sleeper"
 
-/obj/machinery/sleeper/container_resist(mob/living/user)
+/obj/machinery/sleeper/container_resist()
 	visible_message("<span class='notice'>[occupant] emerges from [src]!</span>",
 		"<span class='notice'>You climb out of [src]!</span>")
 	open_machine()
 
 /obj/machinery/sleeper/relaymove(mob/user)
-	container_resist(user)
+	container_resist()
 
 /obj/machinery/sleeper/open_machine()
 	if(!state_open && !panel_open)
@@ -75,22 +68,34 @@
 /obj/machinery/sleeper/close_machine(mob/user)
 	if((isnull(user) || istype(user)) && state_open && !panel_open)
 		..(user)
-		if(occupant && occupant.stat != DEAD)
-			occupant << "<span class='notice'><b>You feel cool air surround you. You go numb as your senses turn inward.</b></span>"
+
+/obj/machinery/sleeper/attack_animal(mob/living/simple_animal/M)
+	if(M.environment_smash)
+		M.do_attack_animation(src)
+		visible_message("<span class='danger'>[M.name] smashes [src] apart!</span>")
+		qdel(src)
 
 /obj/machinery/sleeper/emp_act(severity)
 	if(is_operational() && occupant)
 		open_machine()
 	..(severity)
 
+/obj/machinery/sleeper/blob_act()
+	if(prob(75))
+		var/turf/T = get_turf(src)
+		for(var/atom/movable/A in src)
+			A.forceMove(T)
+			A.blob_act()
+		qdel(src)
+
 /obj/machinery/sleeper/MouseDrop_T(mob/target, mob/user)
-	if(user.stat || user.lying || !Adjacent(user) || !user.Adjacent(target) || !iscarbon(target) || !user.IsAdvancedToolUser())
+	if(user.stat || user.lying || !Adjacent(user) || !user.Adjacent(target) || !iscarbon(target))
 		return
 	close_machine(target)
 
 /obj/machinery/sleeper/attackby(obj/item/I, mob/user, params)
 	if(!state_open && !occupant)
-		if(default_deconstruction_screwdriver(user, "[initial(icon_state)]-o", initial(icon_state), I))
+		if(default_deconstruction_screwdriver(user, "sleeper-o", "sleeper", I))
 			return
 	if(default_change_direction_wrench(user, I))
 		return
@@ -100,14 +105,8 @@
 		return
 	if(default_deconstruction_crowbar(I))
 		return
-	return ..()
-
 /obj/machinery/sleeper/ui_interact(mob/user, ui_key = "main", datum/tgui/ui = null, force_open = 0, \
 									datum/tgui/master_ui = null, datum/ui_state/state = notcontained_state)
-
-	if(controls_inside && state == notcontained_state)
-		state = default_state // If it has a set of controls on the inside, make it actually controllable by the mob in it.
-
 	ui = SStgui.try_update_ui(user, src, ui_key, ui, force_open)
 	if(!ui)
 		ui = new(user, src, ui_key, "sleeper", name, 375, 550, master_ui, state)
@@ -129,7 +128,7 @@
 		data["occupant"]["stat"] = occupant.stat
 		data["occupant"]["health"] = occupant.health
 		data["occupant"]["maxHealth"] = occupant.maxHealth
-		data["occupant"]["minHealth"] = HEALTH_THRESHOLD_DEAD
+		data["occupant"]["minHealth"] = config.health_threshold_dead
 		data["occupant"]["bruteLoss"] = occupant.getBruteLoss()
 		data["occupant"]["oxyLoss"] = occupant.getOxyLoss()
 		data["occupant"]["toxLoss"] = occupant.getToxLoss()
@@ -170,14 +169,5 @@
 	if(!occupant)
 		return
 	var/amount = occupant.reagents.get_reagent_amount(chem) + 10 <= 20 * efficiency
-	var/occ_health = occupant.health > min_health || chem == "epinephrine"
-	return amount && occ_health
-
-
-/obj/machinery/sleeper/syndie
-	icon_state = "sleeper_s"
-	controls_inside = TRUE
-
-
-/obj/machinery/sleeper/old
-	icon_state = "oldpod"
+	var/health = occupant.health > min_health || chem == "epinephrine"
+	return amount && health

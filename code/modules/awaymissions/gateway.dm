@@ -7,7 +7,7 @@ var/obj/machinery/gateway/centerstation/the_gateway = null
 	icon_state = "off"
 	density = 1
 	anchored = 1
-	resistance_flags = INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | UNACIDABLE | ACID_PROOF
+	unacidable = 1
 	var/active = 0
 
 
@@ -20,14 +20,13 @@ var/obj/machinery/gateway/centerstation/the_gateway = null
 /obj/machinery/gateway/centerstation/Destroy()
 	if(the_gateway == src)
 		the_gateway = null
-	return ..()
+	..()
 
 
 /obj/machinery/gateway/initialize()
 	update_icon()
-	switch(dir)
-		if(SOUTH,SOUTHEAST,SOUTHWEST)
-			density = 0
+	if(dir == 2)
+		density = 0
 
 
 /obj/machinery/gateway/update_icon()
@@ -145,7 +144,7 @@ var/obj/machinery/gateway/centerstation/the_gateway = null
 
 	if(awaygate.calibrated)
 		AM.forceMove(get_step(awaygate.loc, SOUTH))
-		AM.setDir(SOUTH)
+		AM.dir = SOUTH
 		if (ismob(AM))
 			var/mob/M = AM
 			if (M.client)
@@ -155,7 +154,7 @@ var/obj/machinery/gateway/centerstation/the_gateway = null
 		var/obj/effect/landmark/dest = pick(awaydestinations)
 		if(dest)
 			AM.forceMove(get_turf(dest))
-			AM.setDir(SOUTH)
+			AM.dir = SOUTH
 			use_power(5000)
 		return
 
@@ -253,12 +252,12 @@ var/obj/machinery/gateway/centerstation/the_gateway = null
 	if(!stationgate || qdeleted(stationgate))
 		return
 	if(istype(AM, /mob/living/carbon))
-		var/mob/living/carbon/C = AM
-		for(var/obj/item/weapon/implant/exile/E in C.implants)//Checking that there is an exile implant
-			AM << "\black The station gate has detected your exile implant and is blocking your entry."
-			return
+		for(var/obj/item/weapon/implant/exile/E in AM)//Checking that there is an exile implant in the contents
+			if(E.imp_in == AM)//Checking that it's actually implanted vs just in their pocket
+				AM << "\black The station gate has detected your exile implant and is blocking your entry."
+				return
 	AM.forceMove(get_step(stationgate.loc, SOUTH))
-	AM.setDir(SOUTH)
+	AM.dir = SOUTH
 	if (ismob(AM))
 		var/mob/M = AM
 		if (M.client)

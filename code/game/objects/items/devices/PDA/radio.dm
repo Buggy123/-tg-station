@@ -13,10 +13,6 @@
 	if (istype(loc.loc, /obj/item/device/pda))
 		hostpda = loc.loc
 
-/obj/item/radio/integrated/Destroy()
-	hostpda = null
-	return ..()
-
 /*
  *	Radio Cartridge, essentially a signaler.
  */
@@ -36,7 +32,6 @@
 /obj/item/radio/integrated/signal/Destroy()
 	if(SSradio)
 		SSradio.remove_object(src, frequency)
-	radio_connection = null
 	return ..()
 
 /obj/item/radio/integrated/signal/initialize()

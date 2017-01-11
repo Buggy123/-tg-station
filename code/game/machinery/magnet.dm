@@ -11,7 +11,7 @@
 	name = "electromagnetic generator"
 	desc = "A device that uses station power to create points of magnetic energy."
 	level = 1		// underfloor
-	layer = LOW_OBJ_LAYER
+	layer = 2.5
 	anchored = 1
 	use_power = 1
 	idle_power_usage = 50
@@ -50,7 +50,7 @@
 
 // update the invisibility and icon
 /obj/machinery/magnetic_module/hide(intact)
-	invisibility = intact ? INVISIBILITY_MAXIMUM : 0
+	invisibility = intact ? 101 : 0
 	updateicon()
 
 // update the icon_state
@@ -134,7 +134,8 @@
 				on = !on
 
 				if(on)
-					addtimer(CALLBACK(src, .proc/magnetic_process), 0)
+					spawn()
+						magnetic_process()
 
 
 
@@ -192,8 +193,7 @@
 					step_towards(M, center)
 
 			for(var/mob/living/silicon/S in orange(magnetic_field, center))
-				if(isAI(S))
-					continue
+				if(istype(S, /mob/living/silicon/ai)) continue
 				step_towards(S, center)
 
 		use_power(electricity_level * 5)

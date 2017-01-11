@@ -7,13 +7,12 @@
 	hitsound = "swing_hit"
 	throw_speed = 2
 	throw_range = 4
-	w_class = WEIGHT_CLASS_BULKY
-	max_w_class = WEIGHT_CLASS_NORMAL
+	w_class = 4
+	max_w_class = 3
 	max_combined_w_class = 21
 	attack_verb = list("bashed", "battered", "bludgeoned", "thrashed", "whacked")
-	resistance_flags = FLAMMABLE
-	obj_integrity = 150
-	max_integrity = 150
+	burn_state = FLAMMABLE
+	burntime = 20
 	var/folder_path = /obj/item/weapon/folder //this is the path of the folder that gets spawned in New()
 
 /obj/item/weapon/storage/briefcase/New()
@@ -29,7 +28,7 @@
 /obj/item/weapon/storage/briefcase/lawyer/New()
 	new /obj/item/weapon/stamp/law(src)
 	..()
-
+	
 /obj/item/weapon/storage/briefcase/sniperbundle
 	name = "briefcase"
 	desc = "It's label reads genuine hardened Captain leather, but suspiciously has no other tags or branding. Smells like L'Air du Temps."
@@ -39,18 +38,17 @@
 	hitsound = "swing_hit"
 	throw_speed = 2
 	throw_range = 4
-	w_class = WEIGHT_CLASS_BULKY
-	max_w_class = WEIGHT_CLASS_NORMAL
+	w_class = 4
+	max_w_class = 3
 	max_combined_w_class = 21
 	attack_verb = list("bashed", "battered", "bludgeoned", "thrashed", "whacked")
-	resistance_flags = FLAMMABLE
-	obj_integrity = 150
-	max_integrity = 150
+	burn_state = FLAMMABLE
+	burntime = 20
 
 /obj/item/weapon/storage/briefcase/sniperbundle/New()
 	..()
-	new /obj/item/weapon/gun/ballistic/automatic/sniper_rifle/syndicate(src)
-	new /obj/item/clothing/neck/tie/red(src)
+	new /obj/item/weapon/gun/projectile/sniper_rifle/syndicate(src)
+	new /obj/item/clothing/tie/red(src)
 	new /obj/item/clothing/under/syndicate/sniper(src)
 	new /obj/item/ammo_box/magazine/sniper_rounds/soporific(src)
 	new /obj/item/ammo_box/magazine/sniper_rounds/haemorrhage(src)

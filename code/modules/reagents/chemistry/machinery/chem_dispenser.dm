@@ -8,7 +8,6 @@
 	use_power = 1
 	idle_power_usage = 40
 	interact_offline = 1
-	resistance_flags = FIRE_PROOF | ACID_PROOF
 	var/energy = 100
 	var/max_energy = 100
 	var/amount = 30
@@ -44,13 +43,6 @@
 		"bromine",
 		"stable_plasma"
 	)
-	var/list/emagged_reagents = list(
-		"space_drugs",
-		"morphine",
-		"carpotoxin",
-		"mine_salve",
-		"toxin"
-	)
 
 /obj/machinery/chem_dispenser/New()
 	..()
@@ -73,28 +65,13 @@
 	if(energy != oldenergy)
 		use_power(2500)
 
-/obj/machinery/chem_dispenser/emag_act(mob/user)
-	if(emagged)
-		user << "<span class='warning'>\The [src] has no functional safeties to emag.</span>"
-		return
-	user << "<span class='notice'>You short out \the [src]'s safeties.</span>"
-	dispensable_reagents |= emagged_reagents//add the emagged reagents to the dispensable ones
-	emagged = 1
-
 /obj/machinery/chem_dispenser/ex_act(severity, target)
 	if(severity < 3)
 		..()
 
-/obj/machinery/chem_dispenser/contents_explosion(severity, target)
-	..()
-	if(beaker)
-		beaker.ex_act(severity, target)
-
-/obj/machinery/chem_dispenser/handle_atom_del(atom/A)
-	..()
-	if(A == beaker)
-		beaker = null
-		cut_overlays()
+/obj/machinery/chem_dispenser/blob_act()
+	if(prob(50))
+		qdel(src)
 
 /obj/machinery/chem_dispenser/ui_interact(mob/user, ui_key = "main", datum/tgui/ui = null, force_open = 0, \
 											datum/tgui/master_ui = null, datum/ui_state/state = default_state)
@@ -161,37 +138,37 @@
 				. = TRUE
 		if("eject")
 			if(beaker)
-				beaker.forceMove(loc)
+				beaker.loc = loc
 				beaker = null
-				cut_overlays()
+				overlays.Cut()
 				. = TRUE
 
 /obj/machinery/chem_dispenser/attackby(obj/item/I, mob/user, params)
 	if(default_unfasten_wrench(user, I))
 		return
 
-	if(istype(I, /obj/item/weapon/reagent_containers) && (I.container_type & OPENCONTAINER))
-		var/obj/item/weapon/reagent_containers/B = I
-		. = 1 //no afterattack
-		if(beaker)
-			user << "<span class='warning'>A container is already loaded into the machine!</span>"
-			return
+	if(isrobot(user))
+		return
 
-		if(!user.drop_item()) // Can't let go?
-			return
+	var/obj/item/weapon/reagent_containers/B = I // Get a beaker from it?
+	if(!istype(B))
+		return // Not a beaker?
 
-		beaker = B
-		beaker.loc = src
-		user << "<span class='notice'>You add \the [B] to the machine.</span>"
+	if(beaker)
+		user << "<span class='warning'>A beaker is already loaded into the machine!</span>"
+		return
 
-		if(!icon_beaker)
-			icon_beaker = image('icons/obj/chemical.dmi', src, "disp_beaker") //randomize beaker overlay position.
-		icon_beaker.pixel_x = rand(-10,5)
-		add_overlay(icon_beaker)
-	else if(user.a_intent != INTENT_HARM && !istype(I, /obj/item/weapon/card/emag))
-		user << "<span class='warning'>You can't load \the [I] into the machine!</span>"
-	else
-		return ..()
+	if(!user.drop_item()) // Can't let go?
+		return
+
+	beaker = B
+	beaker.loc = src
+	user << "<span class='notice'>You add the beaker to the machine.</span>"
+
+	if(!icon_beaker)
+		icon_beaker = image('icons/obj/chemical.dmi', src, "disp_beaker") //randomize beaker overlay position.
+	icon_beaker.pixel_x = rand(-10,5)
+	overlays += icon_beaker
 
 /obj/machinery/chem_dispenser/constructable
 	name = "portable chem dispenser"
@@ -247,20 +224,15 @@
 
 /obj/machinery/chem_dispenser/constructable/New()
 	..()
-	var/obj/item/weapon/circuitboard/machine/B = new /obj/item/weapon/circuitboard/machine/chem_dispenser(null)
-	B.apply_default_parts(src)
-
-/obj/item/weapon/circuitboard/machine/chem_dispenser
-	name = "Portable Chem Dispenser (Machine Board)"
-	build_path = /obj/machinery/chem_dispenser/constructable
-	origin_tech = "materials=4;programming=4;plasmatech=4;biotech=3"
-	req_components = list(
-							/obj/item/weapon/stock_parts/matter_bin = 2,
-							/obj/item/weapon/stock_parts/capacitor = 1,
-							/obj/item/weapon/stock_parts/manipulator = 1,
-							/obj/item/weapon/stock_parts/console_screen = 1,
-							/obj/item/weapon/stock_parts/cell = 1)
-	def_components = list(/obj/item/weapon/stock_parts/cell = /obj/item/weapon/stock_parts/cell/high)
+	component_parts = list()
+	component_parts += new /obj/item/weapon/circuitboard/chem_dispenser(null)
+	component_parts += new /obj/item/weapon/stock_parts/matter_bin(null)
+	component_parts += new /obj/item/weapon/stock_parts/matter_bin(null)
+	component_parts += new /obj/item/weapon/stock_parts/manipulator(null)
+	component_parts += new /obj/item/weapon/stock_parts/capacitor(null)
+	component_parts += new /obj/item/weapon/stock_parts/console_screen(null)
+	component_parts += new /obj/item/weapon/stock_parts/cell/high(null)
+	RefreshParts()
 
 /obj/machinery/chem_dispenser/constructable/RefreshParts()
 	var/time = 0
@@ -280,7 +252,7 @@
 			dispensable_reagents |= dispensable_reagent_tiers[i]
 	dispensable_reagents = sortList(dispensable_reagents)
 
-/obj/machinery/chem_dispenser/constructable/attackby(obj/item/I, mob/user, params)
+/obj/machinery/chem_dispenser/constructable/attackby(var/obj/item/I, var/mob/user, params)
 	..()
 	if(default_deconstruction_screwdriver(user, "minidispenser-o", "minidispenser", I))
 		return
@@ -288,18 +260,16 @@
 	if(exchange_parts(user, I))
 		return
 
-	if(default_deconstruction_crowbar(I))
-		return
-	return ..()
-
-/obj/machinery/chem_dispenser/constructable/on_deconstruction()
-	if(beaker)
-		beaker.loc = loc
-		beaker = null
+	if(panel_open)
+		if(istype(I, /obj/item/weapon/crowbar))
+			if(beaker)
+				beaker.loc = loc
+				beaker = null
+			default_deconstruction_crowbar(I)
+			return 1
 
 /obj/machinery/chem_dispenser/drinks
 	name = "soda dispenser"
-	desc = "Contains a large reservoir of soft drinks."
 	anchored = 1
 	icon = 'icons/obj/chemical.dmi'
 	icon_state = "soda_dispenser"
@@ -321,25 +291,36 @@
 		"sugar",
 		"orangejuice",
 		"limejuice",
-		"tomatojuice",
-		"lemonjuice"
-	)
-	emagged_reagents = list(
-		"thirteenloko",
-		"whiskeycola",
-		"mindbreaker",
-		"tirizene"
+		"tomatojuice"
 	)
 
+/obj/machinery/chem_dispenser/drinks/attackby(obj/item/I, mob/user)
+	if(default_unfasten_wrench(user, I))
+		return
 
+	if(istype(I, /obj/item/weapon/reagent_containers) && (I.flags & OPENCONTAINER))
+		if (beaker)
+			return 1
+		else
+			if(!user.drop_item())
+				return 1
+			src.beaker =  I
+			beaker.loc = src
+			update_icon()
+			return
 
 /obj/machinery/chem_dispenser/drinks/beer
 	name = "booze dispenser"
-	desc = "Contains a large reservoir of the good stuff."
 	anchored = 1
 	icon = 'icons/obj/chemical.dmi'
 	icon_state = "booze_dispenser"
 	dispensable_reagents = list(
+		"lemon_lime",
+		"sugar",
+		"orangejuice",
+		"limejuice",
+		"sodawater",
+		"tonic",
 		"beer",
 		"kahlua",
 		"whiskey",
@@ -350,20 +331,5 @@
 		"tequila",
 		"vermouth",
 		"cognac",
-		"ale",
-		"absinthe",
-		"hcider"
+		"ale"
 	)
-	emagged_reagents = list(
-		"ethanol",
-		"iron",
-		"minttoxin",
-		"atomicbomb"
-	)
-
-
-/obj/machinery/chem_dispenser/mutagen
-	name = "mutagen dispenser"
-	desc = "Creates and dispenses mutagen."
-	dispensable_reagents = list("mutagen")
-	emagged_reagents = list("plasma")

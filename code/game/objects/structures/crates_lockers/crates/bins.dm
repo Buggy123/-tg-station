@@ -6,7 +6,6 @@
 	close_sound = 'sound/effects/bin_close.ogg'
 	anchored = TRUE
 	horizontal = FALSE
-	delivery_icon = null
 
 /obj/structure/closet/crate/bin/New()
 	..()
@@ -14,13 +13,13 @@
 
 /obj/structure/closet/crate/bin/update_icon()
 	..()
-	cut_overlays()
+	overlays.Cut()
 	if(contents.len == 0)
-		add_overlay("largebing")
+		overlays += "largebing"
 	else if(contents.len >= storage_capacity)
-		add_overlay("largebinr")
+		overlays += "largebinr"
 	else
-		add_overlay("largebino")
+		overlays += "largebino"
 
 /obj/structure/closet/crate/bin/attackby(obj/item/weapon/W, mob/user, params)
 	if(istype(W, /obj/item/weapon/storage/bag/trash))
@@ -33,9 +32,9 @@
 		do_animate()
 	else if(istype(W, /obj/item/weapon/wrench))
 		anchored = !anchored
-		playsound(src.loc, W.usesound, 75, 1)
+		playsound(src.loc, 'sound/items/Ratchet.ogg', 75, 1)
 	else
-		return ..()
+		..()
 
 /obj/structure/closet/crate/bin/proc/do_animate()
 	playsound(loc, open_sound, 15, 1, -3)

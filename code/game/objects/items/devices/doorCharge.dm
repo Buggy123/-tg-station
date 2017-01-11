@@ -3,14 +3,13 @@
 	desc = null //Different examine for traitors
 	item_state = "electronic"
 	icon_state = "doorCharge"
-	w_class = WEIGHT_CLASS_SMALL
+	w_class = 2
 	throw_range = 4
 	throw_speed = 1
-	flags = NOBLUDGEON
 	force = 3
 	attack_verb = list("blown up", "exploded", "detonated")
 	materials = list(MAT_METAL=50, MAT_GLASS=30)
-	origin_tech = "syndicate=1;combat=3;engineering=3"
+	origin_tech = "syndicate=3;combat=2"
 
 /obj/item/device/doorCharge/ex_act(severity, target)
 	switch(severity)
@@ -24,13 +23,6 @@
 		if(3)
 			if(prob(25))
 				ex_act(1)
-
-/obj/item/device/doorCharge/Destroy()
-	if(istype(loc, /obj/machinery/door/airlock))
-		var/obj/machinery/door/airlock/A = loc
-		if(A.charge == src)
-			A.charge = null
-	return ..()
 
 /obj/item/device/doorCharge/examine(mob/user)
 	..()

@@ -3,7 +3,7 @@
 	desc = "Used to access the station's automated alert system."
 	icon_screen = "alert:0"
 	icon_keyboard = "atmos_key"
-	circuit = /obj/item/weapon/circuitboard/computer/stationalert
+	circuit = /obj/item/weapon/circuitboard/stationalert
 	var/alarms = list("Fire" = list(), "Atmosphere" = list(), "Power" = list())
 
 /obj/machinery/computer/station_alert/ui_interact(mob/user, ui_key = "main", datum/tgui/ui = null, force_open = 0, \
@@ -80,4 +80,4 @@
 		if(L.len)
 			active_alarms = TRUE
 	if(active_alarms)
-		add_overlay("alert:2")
+		overlays += "alert:2"

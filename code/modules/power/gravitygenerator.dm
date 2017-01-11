@@ -25,21 +25,12 @@ var/const/GRAV_NEEDS_WRENCH = 3
 	anchored = 1
 	density = 1
 	use_power = 0
-	resistance_flags = INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | UNACIDABLE | ACID_PROOF
+	unacidable = 1
 	var/sprite_number = 0
 
 /obj/machinery/gravity_generator/ex_act(severity, target)
 	if(severity == 1) // Very sturdy.
 		set_broken()
-
-/obj/machinery/gravity_generator/blob_act(obj/structure/blob/B)
-	if(prob(20))
-		set_broken()
-
-/obj/machinery/gravity_generator/tesla_act(power, explosive)
-	..()
-	if(explosive)
-		qdel(src)//like the singulo, tesla deletes it. stops it from exploding over and over
 
 /obj/machinery/gravity_generator/update_icon()
 	..()
@@ -64,10 +55,9 @@ var/const/GRAV_NEEDS_WRENCH = 3
 	stat &= ~BROKEN
 
 /obj/machinery/gravity_generator/part/Destroy()
+	set_broken()
 	if(main_part)
 		qdel(main_part)
-		return QDEL_HINT_LETMELIVE
-	set_broken()
 	return ..()
 
 //
@@ -97,14 +87,12 @@ var/const/GRAV_NEEDS_WRENCH = 3
 
 /obj/machinery/gravity_generator/main/station/initialize()
 	setup_parts()
-	middle.add_overlay("activated")
+	middle.overlays += "activated"
 	update_list()
 
 //
 // Generator an admin can spawn
 //
-/obj/machinery/gravity_generator/main/station/admin
-	use_power = 0
 
 /obj/machinery/gravity_generator/main/station/admin/New()
 	..()
@@ -154,7 +142,7 @@ var/const/GRAV_NEEDS_WRENCH = 3
 			middle = part
 		if(count <= 3) // Their sprite is the top part of the generator
 			part.density = 0
-			part.layer = WALL_OBJ_LAYER
+			part.layer = MOB_LAYER + 0.1
 		part.sprite_number = count
 		part.main_part = src
 		parts += part
@@ -168,7 +156,7 @@ var/const/GRAV_NEEDS_WRENCH = 3
 	for(var/obj/machinery/gravity_generator/M in parts)
 		if(!(M.stat & BROKEN))
 			M.set_broken()
-	middle.cut_overlays()
+	middle.overlays.Cut()
 	charge_count = 0
 	breaker = 0
 	set_power()
@@ -188,14 +176,13 @@ var/const/GRAV_NEEDS_WRENCH = 3
 
 // Fixing the gravity generator.
 /obj/machinery/gravity_generator/main/attackby(obj/item/I, mob/user, params)
+	var/old_broken_state = broken_state
 	switch(broken_state)
 		if(GRAV_NEEDS_SCREWDRIVER)
 			if(istype(I, /obj/item/weapon/screwdriver))
 				user << "<span class='notice'>You secure the screws of the framework.</span>"
-				playsound(src.loc, I.usesound, 50, 1)
+				playsound(src.loc, 'sound/items/Screwdriver.ogg', 50, 1)
 				broken_state++
-				update_icon()
-				return
 		if(GRAV_NEEDS_WELDING)
 			if(istype(I, /obj/item/weapon/weldingtool))
 				var/obj/item/weapon/weldingtool/WT = I
@@ -203,30 +190,27 @@ var/const/GRAV_NEEDS_WRENCH = 3
 					user << "<span class='notice'>You mend the damaged framework.</span>"
 					playsound(src.loc, 'sound/items/Welder2.ogg', 50, 1)
 					broken_state++
-					update_icon()
 				else if(WT.isOn())
 					user << "<span class='warning'>You don't have enough fuel to mend the damaged framework!</span>"
-				return
 		if(GRAV_NEEDS_PLASTEEL)
 			if(istype(I, /obj/item/stack/sheet/plasteel))
 				var/obj/item/stack/sheet/plasteel/PS = I
-				if(PS.get_amount() >= 10)
+				if(PS.amount >= 10)
 					PS.use(10)
 					user << "<span class='notice'>You add the plating to the framework.</span>"
 					playsound(src.loc, 'sound/machines/click.ogg', 75, 1)
 					broken_state++
-					update_icon()
 				else
 					user << "<span class='warning'>You need 10 sheets of plasteel!</span>"
-				return
 		if(GRAV_NEEDS_WRENCH)
 			if(istype(I, /obj/item/weapon/wrench))
 				user << "<span class='notice'>You secure the plating to the framework.</span>"
-				playsound(src.loc, I.usesound, 75, 1)
+				playsound(src.loc, 'sound/items/Ratchet.ogg', 75, 1)
 				set_fix()
-				return
-	return ..()
-
+		else
+			..()
+	if(old_broken_state != broken_state)
+		update_icon()
 
 /obj/machinery/gravity_generator/main/attack_hand(mob/user)
 	if(!..())
@@ -359,9 +343,9 @@ var/const/GRAV_NEEDS_WRENCH = 3
 
 			if(overlay_state != current_overlay)
 				if(middle)
-					middle.cut_overlays()
+					middle.overlays.Cut()
 					if(overlay_state)
-						middle.add_overlay(overlay_state)
+						middle.overlays += overlay_state
 					current_overlay = overlay_state
 
 

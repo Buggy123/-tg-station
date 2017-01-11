@@ -1,7 +1,7 @@
 /proc/empulse(turf/epicenter, heavy_range, light_range, log=0)
 	if(!epicenter) return
 
-	if(!isturf(epicenter))
+	if(!istype(epicenter, /turf))
 		epicenter = get_turf(epicenter.loc)
 
 	if(log)
@@ -14,8 +14,7 @@
 	if(heavy_range > light_range)
 		light_range = heavy_range
 
-	for(var/A in spiral_range(light_range, epicenter))
-		var/atom/T = A
+	for(var/atom/T in range(light_range, epicenter))
 		var/distance = get_dist(epicenter, T)
 		if(distance < 0)
 			distance = 0

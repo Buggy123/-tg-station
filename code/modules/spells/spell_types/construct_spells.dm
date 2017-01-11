@@ -19,10 +19,9 @@
 	invocation = "none"
 	invocation_type = "none"
 	range = 0
-	summon_type = list(/turf/open/floor/engine/cult)
+	summon_type = list(/turf/simulated/floor/engine/cult)
 	action_icon_state = "floorconstruct"
 	action_background_icon_state = "bg_cult"
-
 
 /obj/effect/proc_holder/spell/aoe_turf/conjure/wall
 	name = "Summon Cult Wall"
@@ -37,8 +36,7 @@
 	action_icon_state = "lesserconstruct"
 	action_background_icon_state = "bg_cult"
 
-	summon_type = list(/turf/closed/wall/mineral/cult/artificer) //we don't want artificer-based runed metal farms
-
+	summon_type = list(/turf/simulated/wall/cult)
 
 /obj/effect/proc_holder/spell/aoe_turf/conjure/wall/reinforced
 	name = "Greater Construction"
@@ -51,7 +49,7 @@
 	invocation_type = "none"
 	range = 0
 
-	summon_type = list(/turf/closed/wall/r_wall)
+	summon_type = list(/turf/simulated/wall/r_wall)
 
 /obj/effect/proc_holder/spell/aoe_turf/conjure/soulstone
 	name = "Summon Soulstone"
@@ -105,11 +103,19 @@
 	range = -1
 	include_user = 1
 	jaunt_duration = 50 //in deciseconds
+	centcom_cancast = 0 //Stop people from getting to centcom
 	action_icon_state = "phaseshift"
 	action_background_icon_state = "bg_demon"
-	jaunt_in_time = 12
-	jaunt_in_type = /obj/effect/overlay/temp/dir_setting/wraith
-	jaunt_out_type = /obj/effect/overlay/temp/dir_setting/wraith/out
+
+/obj/effect/proc_holder/spell/targeted/ethereal_jaunt/shift/jaunt_disappear(atom/movable/overlay/animation, mob/living/target)
+	animation.icon_state = "phase_shift"
+	animation.dir = target.dir
+	flick("phase_shift",animation)
+
+/obj/effect/proc_holder/spell/targeted/ethereal_jaunt/shift/jaunt_reappear(atom/movable/overlay/animation, mob/living/target)
+	animation.icon_state = "phase_shift2"
+	animation.dir = target.dir
+	flick("phase_shift2",animation)
 
 /obj/effect/proc_holder/spell/targeted/ethereal_jaunt/shift/jaunt_steam(mobloc)
 	return

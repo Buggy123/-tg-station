@@ -25,7 +25,7 @@ Borg Hypospray
 
 	var/list/datum/reagents/reagent_list = list()
 	var/list/reagent_ids = list("dexalin", "kelotane", "bicaridine", "antitoxin", "epinephrine", "spaceacillin")
-	var/accepts_reagent_upgrades = TRUE //If upgrades can increase number of reagents dispensed.
+	//var/list/reagent_ids = list("salbutamol", "salglu_solution", "salglu_solution", "charcoal", "ephedrine", "spaceacillin")
 	var/list/modes = list() //Basically the inverse of reagent_ids. Instead of having numbers as "keys" and strings as values it has strings as keys and numbers as values.
 								//Used as list for input() in shakers.
 
@@ -33,14 +33,17 @@ Borg Hypospray
 /obj/item/weapon/reagent_containers/borghypo/New()
 	..()
 
+	var/iteration = 1
 	for(var/R in reagent_ids)
 		add_reagent(R)
+		modes[R] = iteration
+		iteration++
 
-	START_PROCESSING(SSobj, src)
+	SSobj.processing |= src
 
 
 /obj/item/weapon/reagent_containers/borghypo/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	SSobj.processing.Remove(src)
 	return ..()
 
 
@@ -71,10 +74,8 @@ Borg Hypospray
 	var/datum/reagents/R = reagent_list[reagent_list.len]
 	R.add_reagent(reagent, 30)
 
-	modes[reagent] = modes.len + 1
-
 /obj/item/weapon/reagent_containers/borghypo/proc/regenerate_reagents()
-	if(iscyborg(src.loc))
+	if(isrobot(src.loc))
 		var/mob/living/silicon/robot/R = src.loc
 		if(R && R.cell)
 			for(var/i in 1 to reagent_ids.len)
@@ -90,7 +91,7 @@ Borg Hypospray
 		return
 	if(!istype(M))
 		return
-	if(R.total_volume && M.can_inject(user, 1, user.zone_selected,bypass_protection))
+	if(R.total_volume && M.can_inject(user, 1, bypass_protection))
 		M << "<span class='warning'>You feel a tiny prick!</span>"
 		user << "<span class='notice'>You inject [M] with the injector.</span>"
 		var/fraction = min(amount_per_transfer_from_this/R.total_volume, 1)
@@ -98,11 +99,6 @@ Borg Hypospray
 		if(M.reagents)
 			var/trans = R.trans_to(M, amount_per_transfer_from_this)
 			user << "<span class='notice'>[trans] unit\s injected.  [R.total_volume] unit\s remaining.</span>"
-
-	var/list/injected = list()
-	for(var/datum/reagent/RG in R.reagent_list)
-		injected += RG.name
-	add_logs(user, M, "injected", src, "(CHEMICALS: [english_list(injected)])")
 
 /obj/item/weapon/reagent_containers/borghypo/attack_self(mob/user)
 	var/chosen_reagent = modes[input(user, "What reagent do you want to dispense?") as null|anything in reagent_ids]
@@ -131,11 +127,6 @@ Borg Hypospray
 	if(empty)
 		usr << "<span class='warning'>It is currently empty! Allow some time for the internal syntheszier to produce more.</span>"
 
-/obj/item/weapon/reagent_containers/borghypo/hacked
-	icon_state = "borghypo_s"
-	reagent_ids = list ("facid", "mutetoxin", "cyanide", "sodium_thiopental", "heparin", "lexorin")
-	accepts_reagent_upgrades = FALSE
-
 /obj/item/weapon/reagent_containers/borghypo/syndicate
 	name = "syndicate cyborg hypospray"
 	desc = "An experimental piece of Syndicate technology used to produce powerful restorative nanites used to very quickly restore injuries of all types. Also metabolizes potassium iodide, for radiation poisoning, and morphine, for offense."
@@ -144,7 +135,6 @@ Borg Hypospray
 	recharge_time = 2
 	reagent_ids = list("syndicate_nanites", "potass_iodide", "morphine")
 	bypass_protection = 1
-	accepts_reagent_upgrades = FALSE
 
 /*
 Borg Shaker
@@ -157,7 +147,6 @@ Borg Shaker
 	possible_transfer_amounts = list(5,10,20)
 	charge_cost = 20 //Lots of reagents all regenerating at once, so the charge cost is lower. They also regenerate faster.
 	recharge_time = 3
-	accepts_reagent_upgrades = FALSE
 
 	reagent_ids = list("beer", "orangejuice", "limejuice", "tomatojuice", "cola", "tonic", "sodawater", "ice", "cream", "whiskey", "vodka", "rum", "gin", "tequila", "vermouth", "wine", "kahlua", "cognac", "ale")
 
@@ -165,7 +154,7 @@ Borg Shaker
 	return //Can't inject stuff with a shaker, can we? //not with that attitude
 
 /obj/item/weapon/reagent_containers/borghypo/borgshaker/regenerate_reagents()
-	if(iscyborg(src.loc))
+	if(isrobot(src.loc))
 		var/mob/living/silicon/robot/R = src.loc
 		if(R && R.cell)
 			for(var/i in modes) //Lots of reagents in this one, so it's best to regenrate them all at once to keep it from being tedious.
@@ -212,24 +201,5 @@ Borg Shaker
 	possible_transfer_amounts = list(5,10,20)
 	charge_cost = 20 //Lots of reagents all regenerating at once, so the charge cost is lower. They also regenerate faster.
 	recharge_time = 3
-	accepts_reagent_upgrades = FALSE
 
 	reagent_ids = list("beer2")
-
-/obj/item/weapon/reagent_containers/borghypo/peace
-	name = "Peace Hypospray"
-
-	reagent_ids = list("dizzysolution","tiresolution")
-	accepts_reagent_upgrades = FALSE
-
-/obj/item/weapon/reagent_containers/borghypo/peace/hacked
-	desc = "Everything's peaceful in death!"
-	icon_state = "borghypo_s"
-	reagent_ids = list("dizzysolution","tiresolution","tirizene","sulfonal","sodium_thiopental","cyanide","neurotoxin2")
-	accepts_reagent_upgrades = FALSE
-
-/obj/item/weapon/reagent_containers/borghypo/epi
-	name = "epinephrine injector"
-	desc = "An advanced chemical synthesizer and injection system, designed to stabilize patients.."
-	reagent_ids = list("epinephrine")
-	accepts_reagent_upgrades = FALSE

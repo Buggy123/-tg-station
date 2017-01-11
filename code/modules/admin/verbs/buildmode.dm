@@ -52,7 +52,7 @@
 
 
 /obj/screen/buildmode/bdir/update_icon()
-	setDir(bd.build_dir)
+	dir = bd.build_dir
 	return
 
 /obj/screen/buildmode/quit
@@ -64,7 +64,7 @@
 	bd.quit()
 	return 1
 
-/obj/screen/buildmode/bdir/Click()
+/obj/screen/buildmode/dir/Click()
 	bd.change_dir()
 	update_icon()
 	return 1
@@ -242,50 +242,50 @@
 	. = 1
 	switch(mode)
 		if(BASIC_BUILDMODE)
-			if(isturf(object) && left_click && !alt_click && !ctrl_click)
+			if(istype(object,/turf) && left_click && !alt_click && !ctrl_click)
 				var/turf/T = object
-				if(isspaceturf(object))
-					T.ChangeTurf(/turf/open/floor/plasteel)
-				else if(isfloorturf(object))
-					T.ChangeTurf(/turf/closed/wall)
-				else if(iswallturf(object))
-					T.ChangeTurf(/turf/closed/wall/r_wall)
+				if(istype(object,/turf/space))
+					T.ChangeTurf(/turf/simulated/floor/plasteel)
+				else if(istype(object,/turf/simulated/floor))
+					T.ChangeTurf(/turf/simulated/wall)
+				else if(istype(object,/turf/simulated/wall))
+					T.ChangeTurf(/turf/simulated/wall/r_wall)
 				log_admin("Build Mode: [key_name(user)] built [T] at ([T.x],[T.y],[T.z])")
 				return
 			else if(right_click)
 				log_admin("Build Mode: [key_name(user)] deleted [object] at ([object.x],[object.y],[object.z])")
-				if(iswallturf(object))
+				if(istype(object,/turf/simulated/wall))
 					var/turf/T = object
-					T.ChangeTurf(/turf/open/floor/plasteel)
-				else if(isfloorturf(object))
+					T.ChangeTurf(/turf/simulated/floor/plasteel)
+				else if(istype(object,/turf/simulated/floor))
 					var/turf/T = object
-					T.ChangeTurf(/turf/open/space)
-				else if(istype(object,/turf/closed/wall/r_wall))
+					T.ChangeTurf(/turf/space)
+				else if(istype(object,/turf/simulated/wall/r_wall))
 					var/turf/T = object
-					T.ChangeTurf(/turf/closed/wall)
-				else if(isobj(object))
+					T.ChangeTurf(/turf/simulated/wall)
+				else if(istype(object,/obj))
 					qdel(object)
 				return
-			else if(isturf(object) && alt_click && left_click)
+			else if(istype(object,/turf) && alt_click && left_click)
 				log_admin("Build Mode: [key_name(user)] built an airlock at ([object.x],[object.y],[object.z])")
 				new/obj/machinery/door/airlock(get_turf(object))
-			else if(isturf(object) && ctrl_click && left_click)
+			else if(istype(object,/turf) && ctrl_click && left_click)
 				switch(build_dir)
 					if(NORTH)
 						var/obj/structure/window/reinforced/WIN = new/obj/structure/window/reinforced(get_turf(object))
-						WIN.setDir(NORTH)
+						WIN.dir = NORTH
 					if(SOUTH)
 						var/obj/structure/window/reinforced/WIN = new/obj/structure/window/reinforced(get_turf(object))
-						WIN.setDir(SOUTH)
+						WIN.dir = SOUTH
 					if(EAST)
 						var/obj/structure/window/reinforced/WIN = new/obj/structure/window/reinforced(get_turf(object))
-						WIN.setDir(EAST)
+						WIN.dir = EAST
 					if(WEST)
 						var/obj/structure/window/reinforced/WIN = new/obj/structure/window/reinforced(get_turf(object))
-						WIN.setDir(WEST)
+						WIN.dir = WEST
 					if(NORTHWEST)
 						var/obj/structure/window/reinforced/WIN = new/obj/structure/window/reinforced(get_turf(object))
-						WIN.setDir(NORTHWEST)
+						WIN.dir = NORTHWEST
 				log_admin("Build Mode: [key_name(user)] built a window at ([object.x],[object.y],[object.z])")
 		if(ADV_BUILDMODE)
 			if(left_click)
@@ -295,7 +295,7 @@
 					T.ChangeTurf(objholder)
 				else
 					var/obj/A = new objholder (get_turf(object))
-					A.setDir(build_dir)
+					A.dir = build_dir
 					log_admin("Build Mode: [key_name(user)] modified [A]'s ([A.x],[A.y],[A.z]) dir to [build_dir]")
 			else if(right_click)
 				if(isobj(object))

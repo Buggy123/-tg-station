@@ -3,7 +3,6 @@
 	typepath = /datum/round_event/wormholes
 	max_occurrences = 3
 	weight = 2
-	min_players = 2
 
 
 /datum/round_event/wormholes
@@ -20,7 +19,7 @@
 	endWhen = rand(40, 80)
 
 /datum/round_event/wormholes/start()
-	for(var/turf/open/floor/T in world)
+	for(var/turf/simulated/floor/T in world)
 		if(T.z == ZLEVEL_STATION)
 			pick_turfs += T
 
@@ -50,7 +49,6 @@
 	desc = "It looks highly unstable; It could close at any moment."
 	icon = 'icons/obj/objects.dmi'
 	icon_state = "anom"
-	mech_sized = TRUE
 
 /obj/effect/portal/wormhole/attack_hand(mob/user)
 	teleport(user)
@@ -61,9 +59,8 @@
 /obj/effect/portal/wormhole/teleport(atom/movable/M)
 	if(istype(M, /obj/effect))	//sparks don't teleport
 		return
-	if(M.anchored)
-		if(!(istype(M, /obj/mecha) && mech_sized))
-			return
+	if(M.anchored && istype(M, /obj/mecha))
+		return
 
 	if(istype(M, /atom/movable))
 		var/turf/target

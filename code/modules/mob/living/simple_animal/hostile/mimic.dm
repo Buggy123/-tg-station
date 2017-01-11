@@ -11,7 +11,6 @@
 	speed = 0
 	maxHealth = 250
 	health = 250
-	gender = NEUTER
 
 	harm_intent_damage = 5
 	melee_damage_lower = 8
@@ -71,7 +70,7 @@
 		visible_message("<b>[src]</b> starts to move!")
 		attempt_open = 1
 
-/mob/living/simple_animal/hostile/mimic/crate/adjustHealth(amount, updating_health = TRUE, forced = FALSE)
+/mob/living/simple_animal/hostile/mimic/crate/adjustHealth(damage)
 	trigger()
 	. = ..()
 
@@ -150,7 +149,7 @@ var/global/list/protected_objects = list(/obj/structure/table, /obj/structure/ca
 		icon_living = icon_state
 		overlays = O.overlays
 		googly_eyes = image('icons/mob/mob.dmi',"googly_eyes")
-		add_overlay(googly_eyes)
+		overlays += googly_eyes
 		if(istype(O, /obj/structure) || istype(O, /obj/machinery))
 			health = (anchored * 50) + 50
 			destroy_objects = 1
@@ -188,7 +187,7 @@ var/global/list/protected_objects = list(/obj/structure/table, /obj/structure/ca
 
 /mob/living/simple_animal/hostile/mimic/copy/Aggro()
 	..()
-	googly_eyes.setDir(get_dir(src,target))
+	googly_eyes.dir = get_dir(src,target)
 
 
 /mob/living/simple_animal/hostile/mimic/copy/machine
@@ -199,7 +198,7 @@ var/global/list/protected_objects = list(/obj/structure/table, /obj/structure/ca
 /mob/living/simple_animal/hostile/mimic/copy/machine/CanAttack(atom/the_target)
 	if(the_target == creator) // Don't attack our creator AI.
 		return 0
-	if(iscyborg(the_target))
+	if(isrobot(the_target))
 		var/mob/living/silicon/robot/R = the_target
 		if(R.connected_ai == creator) // Only attack robots that aren't synced to our creator AI.
 			return 0
@@ -210,13 +209,12 @@ var/global/list/protected_objects = list(/obj/structure/table, /obj/structure/ca
 /mob/living/simple_animal/hostile/mimic/copy/ranged
 	var/obj/item/weapon/gun/TrueGun = null
 	var/obj/item/weapon/gun/magic/Zapstick
-	var/obj/item/weapon/gun/ballistic/Pewgun
+	var/obj/item/weapon/gun/projectile/Pewgun
 	var/obj/item/weapon/gun/energy/Zapgun
 
 /mob/living/simple_animal/hostile/mimic/copy/ranged/CopyObject(obj/O, mob/living/creator, destroy_original = 0)
 	if(..())
 		emote_see = list("aims menacingly")
-		obj_damage = 0
 		environment_smash = 0 //needed? seems weird for them to do so
 		ranged = 1
 		retreat_distance = 1 //just enough to shoot
@@ -231,7 +229,7 @@ var/global/list/protected_objects = list(/obj/structure/table, /obj/structure/ca
 			Zapstick = G
 			var/obj/item/ammo_casing/magic/M = Zapstick.ammo_type
 			projectiletype = initial(M.projectile_type)
-		if(istype(G, /obj/item/weapon/gun/ballistic))
+		if(istype(G, /obj/item/weapon/gun/projectile))
 			Pewgun = G
 			var/obj/item/ammo_box/magazine/M = Pewgun.mag_type
 			casingtype = initial(M.ammo_type)
