@@ -165,7 +165,7 @@
 			for(var/mob/living/M in compiled)
 				if(M.client && !M.suiciding)
 					icon_state = "morgue4" // Cloneable
-					if(M.stat == DEAD)
+					if(M.stat == DEAD && beeper)
 						playsound(src, 'sound/weapons/smg_empty_alarm.ogg', 50, 0)
 					break
 
