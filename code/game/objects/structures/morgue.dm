@@ -131,11 +131,24 @@
 	desc = "Used to keep bodies in until someone fetches them."
 	icon_state = "morgue1"
 	opendir = EAST
+	var/beeper = TRUE
 
 /obj/structure/bodycontainer/morgue/New()
 	connected = new/obj/structure/tray/m_tray(src)
 	connected.connected = src
 	..()
+
+/obj/structure/bodycontainer/AltClick(mob/user)
+	..()
+	if(user.incapacitated())
+		to_chat(user, "<span class='warning'>You can't do that right now!</span>")
+		return
+	beeper = !beeper
+	to_chat(user, "<span class='notice'>You turn the speaker function [beeper ? "off" : "on"].</span>")
+
+/obj/structure/bodycontainer/examine(mob/user)
+	..()
+	to_chat(user, "<span class='notice'>The speaker function is currently [beeper ? "off" : "on"]. Alt-click to toggle it.</span>")
 
 /obj/structure/bodycontainer/morgue/update_icon()
 	if (!connected || connected.loc != src) // Open or tray is gone.
