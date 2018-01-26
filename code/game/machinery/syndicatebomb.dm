@@ -371,10 +371,11 @@
 
 /obj/item/bombcore/large
 	name = "large bomb payload"
-	range_heavy = 5
-	range_medium = 10
-	range_light = 20
-	range_flame = 20
+	range_heavy = 40
+	range_medium = 50
+	range_light = 60
+	range_flame = 60
+	desc = "An explosive payload designed to thoroughly destroy the contents of a large area, with minimal damage to anything outside that area.
 
 /obj/item/bombcore/miniature
 	name = "small bomb core"
