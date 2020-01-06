@@ -16,6 +16,7 @@
 	var/crush_damage = 1000
 	var/eat_victim_items = TRUE
 	var/item_recycle_sound = 'sound/items/welder.ogg'
+	var/sanity_limit = 50 // Stops recursive content checking beyond this depth.
 
 /obj/machinery/recycler/Initialize()
 	AddComponent(/datum/component/butchering/recycler, 1, amount_produced,amount_produced/5)
@@ -96,16 +97,11 @@
 	if(safety_mode)
 		return
 
-	var/list/to_eat
-	if(istype(AM0, /obj/item))
-		to_eat = AM0.GetAllContents()
-	else
-		to_eat = list(AM0)
-
 	var/items_recycled = 0
+	var/list/nom = eat_contents(AM0)
 
-	for(var/i in to_eat)
-		var/atom/movable/AM = i
+	for(var/i = nom.len, i > 0, i--) // Reverse order so it eats deepest contents before their containers. The opposite goes... badly.
+		var/atom/movable/AM = nom[i]
 		var/obj/item/bodypart/head/as_head = AM
 		var/obj/item/mmi/as_mmi = AM
 		if(istype(AM, /obj/item/organ/brain) || (istype(as_head) && as_head.brain) || (istype(as_mmi) && as_mmi.brain) || istype(AM, /mob/living/brain))
@@ -122,6 +118,21 @@
 			playsound(src, 'sound/machines/buzz-sigh.ogg', 50, FALSE)
 	if(items_recycled && sound)
 		playsound(src, item_recycle_sound, 50, TRUE)
+
+/obj/machinery/recycler/proc/eat_contents(atom/AM, var/sanity = 0)
+	var/list/eating
+	if(istype(AM, /obj/item))
+		eating = AM.GetAllContents()
+	else
+		eating = list(AM)
+
+	if(eating.len > 1 && sanity <= sanity_limit) // GetAllContents() includes the container.
+		var/list/chunky_bits = list()
+		for(var/i = 2, i <= eating.len, i++) // Skip eating[1] or else this gets recursive.
+			chunky_bits += eat_contents(eating[i], sanity++)
+		eating += chunky_bits
+	return eating
+			
 
 /obj/machinery/recycler/proc/recycle_item(obj/item/I)
 
